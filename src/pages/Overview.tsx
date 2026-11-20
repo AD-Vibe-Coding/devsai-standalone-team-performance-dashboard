@@ -52,19 +52,41 @@ export default function Overview() {
               Snapshot numbers for Tier 1–3.
             </p>
           </div>
-          <div className="w-full sm:w-[240px]">
-            <label className="mb-1.5 block text-[11px] uppercase tracking-wider text-muted-foreground">
-              Compare to
-            </label>
-            <Select value={period} onValueChange={(v) => setPeriod(v as ComparePeriod)}>
-              <SelectTrigger aria-label="Compare to previous period">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="month">Previous month</SelectItem>
-                <SelectItem value="quarter">Previous quarter</SelectItem>
-              </SelectContent>
-            </Select>
+          <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
+            <div className="w-full sm:w-[160px]">
+              <label className="mb-1.5 block text-[11px] uppercase tracking-wider text-muted-foreground">
+                View
+              </label>
+              <Select value={grain} onValueChange={(v) => onGrainChange(v as PeriodGrain)}>
+                <SelectTrigger aria-label="Month or quarter">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="month">Month</SelectItem>
+                  <SelectItem value="quarter">Quarter</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="w-full sm:w-[180px]">
+              <label className="mb-1.5 block text-[11px] uppercase tracking-wider text-muted-foreground">
+                {grain === "month" ? "Month" : "Quarter"}
+              </label>
+              <Select
+                value={String(selectedIndex)}
+                onValueChange={(v) => setIndex(Number(v))}
+              >
+                <SelectTrigger aria-label="Selected period">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {labels.map((l, i) => (
+                    <SelectItem key={l} value={String(i)}>
+                      {l}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </div>
       </BlurFade>

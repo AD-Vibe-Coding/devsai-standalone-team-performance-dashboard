@@ -5,6 +5,7 @@ import type { VolumeKey } from "./volumes";
 const STAFF = ROSTER.filter((p) => p.role === "staff");
 
 export type ComparePeriod = "month" | "quarter";
+export type PeriodGrain = "month" | "quarter";
 
 type KpiMap = Partial<Record<KpiKey, number>>;
 type VolumeMap = Record<VolumeKey, number>;
@@ -238,7 +239,7 @@ export type TrendPoint = {
   kpis: Record<string, number>;
 };
 
-const MONTH_LABELS = [
+export const MONTH_LABELS = [
   "Apr 25",
   "May 25",
   "Jun 25",
@@ -254,7 +255,7 @@ const MONTH_LABELS = [
   "Apr 26",
 ];
 
-const QUARTER_LABELS = ["Q2 25", "Q3 25", "Q4 25", "Q1 26", "Q2 26"];
+export const QUARTER_LABELS = ["Q2 25", "Q3 25", "Q4 25", "Q1 26", "Q2 26"];
 
 const CURRENT_VOLUMES = overviewFrom(SNAPSHOT, VOLUMES).volumes;
 const CURRENT_KPIS = overviewFrom(SNAPSHOT, VOLUMES).kpis;
@@ -278,13 +279,72 @@ function wobbleKpi(key: string, value: number, i: number, n: number) {
   return Number(Math.max(0, value + (i % 3 === 0 ? 1 : 0) - (i % 5 === 0 ? 1 : 0)).toFixed(0));
 }
 
-export function snapshotTrends(grain: TrendGrain): TrendPoint[] {
-  const labels = grain === "quarter" ? QUARTER_LABELS : MONTH_LABELS;
+function volFactorsFor(grain: PeriodGrain) {
+  return grain === "quarter"
+    ? [0.88, 0.91, 0.94, 0.97, 1]
+    : [0.82, 0.84, 0.86, 0.88, 0.9, 0.91, 0.93, 0.94, 0.95, 0.97, 0.98, 0.99, 1];
+}
+
+function labelsFor(grain: PeriodGrain) {
+  return grain === "quarter" ? QUARTER_LABELS : MONTH_LABELS;
+}
+
+function scaleKpiMap(source: KpiMap, i: number, n: number): KpiMap {
+  const out: KpiMap = {};
+  for (const [key, value] of Object.entries(source)) {
+    if (value == null) continue;
+    out[key as KpiKey] = wobbleKpi(key, value, i, n);
+  }
+  return out;
+}
+
+function scaleVolumeMap(source: VolumeMap, factor: number): VolumeMap {
+  return {
+    tickets_received: Math.round(source.tickets_received * factor),
+    inbound_calls: Math.round(source.inbound_calls * factor),
+    outbound_calls: Math.round(source.outbound_calls * factor),
+    mobility_tasks: Math.round(source.mobility_tasks * factor),
+  };
+}
+
+function mapsAt(grain: PeriodGrain, index: number) {
+  const labels = labelsFor(grain);
   const n = labels.length;
-  const volFactors =
-    grain === "quarter"
-      ? [0.88, 0.91, 0.94, 0.97, 1]
-      : [0.82, 0.84, 0.86, 0.88, 0.9, 0.91, 0.93, 0.94, 0.95, 0.97, 0.98, 0.99, 1];
+  const i = Math.max(0, Math.min(index, n - 1));
+  const factor = volFactorsFor(grain)[i] ?? 1;
+  const kpis: Record<string, KpiMap> = {};
+  const volumes: Record<string, VolumeMap> = {};
+  for (const person of STAFF) {
+    const k = SNAPSHOT[person.name];
+    const v = VOLUMES[person.name];
+    if (k) kpis[person.name] = scaleKpiMap(k, i, n);
+    if (v) volumes[person.name] = scaleVolumeMap(v, factor);
+  }
+  return { kpis, volumes, label: labels[i], index: i, n };
+}
+
+export function periodLabels(grain: PeriodGrain) {
+  return labelsFor(grain);
+}
+
+export function snapshotAt(grain: PeriodGrain, index: number) {
+  const { kpis, volumes, label, index: i } = mapsAt(grain, index);
+  const overview = overviewFrom(kpis, volumes);
+  const boards = boardsFrom(kpis);
+  let previous: ReturnType<typeof overviewFrom> | null = null;
+  let previousLabel: string | null = null;
+  if (i > 0) {
+    const prior = mapsAt(grain, i - 1);
+    previous = overviewFrom(prior.kpis, prior.volumes);
+    previousLabel = prior.label;
+  }
+  return { overview, boards, label, previous, previousLabel };
+}
+
+export function snapshotTrends(grain: TrendGrain): TrendPoint[] {
+  const labels = labelsFor(grain);
+  const n = labels.length;
+  const volFactors = volFactorsFor(grain);
 
   return labels.map((label, i) => {
     const volumes = scaleVolumes(CURRENT_VOLUMES, volFactors[i] ?? 1);
