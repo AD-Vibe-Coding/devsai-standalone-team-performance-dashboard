@@ -3,6 +3,7 @@ import {
   Area,
   AreaChart,
   CartesianGrid,
+  LabelList,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -87,7 +88,37 @@ function TrendArea({
           dot={{ r: 3, fill: STROKE, strokeWidth: 0 }}
           activeDot={{ r: 5 }}
           isAnimationActive={false}
-        />
+        >
+          <LabelList
+            dataKey="value"
+            position="top"
+            content={(props: {
+              x?: number | string;
+              y?: number | string;
+              value?: number | string;
+            }) => {
+              const x = Number(props.x);
+              const y = Number(props.y);
+              const value = Number(props.value);
+              if (!Number.isFinite(x) || !Number.isFinite(y) || !Number.isFinite(value)) {
+                return null;
+              }
+              return (
+                <text
+                  x={x}
+                  y={y}
+                  dy={-8}
+                  textAnchor="middle"
+                  fill="#1b2430"
+                  fontSize={10}
+                  fontVariantNumeric="tabular-nums"
+                >
+                  {formatValue(value)}
+                </text>
+              );
+            }}
+          />
+        </Area>
       </AreaChart>
     </ResponsiveContainer>
   );
