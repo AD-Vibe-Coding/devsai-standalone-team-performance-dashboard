@@ -1,7 +1,4 @@
-import { sql } from "drizzle-orm";
-import { drizzle } from "drizzle-orm/pglite";
-import * as schema from "../db/schema";
-import { ROSTER } from "./roster";
+import { ROSTER, TIERS } from "./roster";
 import type { KpiKey } from "./kpis";
 
 const STAFF = ROSTER.filter((p) => p.role === "staff");
@@ -42,13 +39,23 @@ const SNAPSHOT: Record<string, Partial<Record<KpiKey, number>>> = {
   },
 };
 
-export function snapshotLeaderboards(): Record<string, { agent: string; team: string; value: number }[]> {
-  const boards: Record<string, { agent: string; team: string; value: number }[]> = {};
+export type LeaderboardRow = {
+  agent: string;
+  team: string;
+  value: number;
+};
+
+export function snapshotLeaderboards(): Record<string, LeaderboardRow[]> {
+  const boards: Record<string, LeaderboardRow[]> = {};
   for (const person of STAFF) {
     const base = SNAPSHOT[person.name];
     if (!base) continue;
     for (const [key, value] of Object.entries(base)) {
-      (boards[key] ??= []).push({ agent: person.name, team: person.tier, value: value as number });
+      (boards[key] ??= []).push({
+        agent: person.name,
+        team: person.tier,
+        value: value as number,
+      });
     }
   }
   return boards;
@@ -67,79 +74,14 @@ export function snapshotOverview() {
       (byTeam[r.team][key] ??= []).push(r.value);
     }
   }
-  const teams = Object.entries(byTeam).map(([slug, metrics]) => ({
-    slug,
-    metrics: Object.fromEntries(Object.entries(metrics).map(([k, vals]) => [k, avg(vals)])),
-    n: Object.values(metrics)[0]?.length ?? 0,
-  }));
+  const order = TIERS.map((t) => t.slug);
+  const teams = Object.entries(byTeam)
+    .map(([slug, metrics]) => ({
+      slug,
+      metrics: Object.fromEntries(Object.entries(metrics).map(([k, vals]) => [k, avg(vals)])),
+      n: Object.values(metrics)[0]?.length ?? 0,
+    }))
+    .sort((a, b) => order.indexOf(a.slug as (typeof order)[number]) - order.indexOf(b.slug as (typeof order)[number]));
   const rowCount = Object.values(boards).reduce((n, rows) => n + rows.length, 0);
   return { kpis, teams, rowCount };
-}
-
-export async function seedSnapshotIfEmpty(
-  db: ReturnType<typeof drizzle<typeof schema>>,
-) {
-  const existing = await db.execute(
-    sql`SELECT COUNT(*)::int AS n FROM metric_records WHERE metric_key IN ('avg_ack_seconds','asa_seconds','mobility_sla_pct')`,
-  );
-  const n = Number((existing.rows?.[0] as { n?: number } | undefined)?.n ?? 0);
-  if (n > 0) return;
-
-  const today = new Date();
-  const dates: string[] = [];
-  for (let i = 13; i >= 0; i--) {
-    const d = new Date(today);
-    d.setDate(today.getDate() - i);
-    dates.push(d.toISOString().slice(0, 10));
-  }
-
-  const [batch] = await db
-    .insert(schema.import_batches)
-    .values({
-      filename: "snapshot-seed.csv",
-      status: "imported",
-      row_count: 0,
-      error_summary: "Demo snapshot — replace by importing a live export.",
-      imported_by: "System",
-      period_start: dates[0],
-      period_end: dates[dates.length - 1],
-    })
-    .returning();
-
-  let count = 0;
-  for (const date of dates) {
-    const dayIndex = dates.indexOf(date);
-    for (const person of STAFF) {
-      const base = SNAPSHOT[person.name];
-      if (!base) continue;
-      const wobble = ((dayIndex + person.name.length) % 5) - 2;
-      const rows: { key: KpiKey; value: number }[] = [
-        { key: "avg_ack_seconds", value: Math.max(60, (base.avg_ack_seconds ?? 120) + wobble * 8) },
-        { key: "ack_under_5_pct", value: clampPct((base.ack_under_5_pct ?? 90) - wobble * 0.4) },
-        { key: "carrier_open_sla_pct", value: clampPct((base.carrier_open_sla_pct ?? 90) - wobble * 0.3) },
-        { key: "refused_calls", value: Math.max(0, (base.refused_calls ?? 0) + (dayIndex === 3 ? 1 : 0) - (dayIndex === 9 ? 1 : 0)) },
-        { key: "asa_seconds", value: Math.max(3, (base.asa_seconds ?? 6) + wobble * 0.15) },
-        { key: "mobility_sla_pct", value: clampPct((base.mobility_sla_pct ?? 90) - wobble * 0.25) },
-      ];
-      for (const r of rows) {
-        await db.insert(schema.metric_records).values({
-          period_date: date,
-          team_slug: person.tier,
-          agent_name: person.name,
-          metric_key: r.key,
-          metric_value: r.value,
-          import_id: batch.id,
-        });
-        count += 1;
-      }
-    }
-  }
-
-  await db.execute(
-    sql`UPDATE import_batches SET row_count = ${count} WHERE id = ${batch.id}`,
-  );
-}
-
-function clampPct(v: number) {
-  return Math.min(99.9, Math.max(70, Number(v.toFixed(1))));
 }

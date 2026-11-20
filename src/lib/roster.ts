@@ -1,7 +1,4 @@
-/**
- * Source-app roster mapping. Update this list when people join or change teams.
- * Roles: "staff" can flag disputes; "manager" can import and review.
- */
+/** Snapshot roster for the NOC dashboard. */
 export type RosterPerson = {
   name: string;
   email: string;

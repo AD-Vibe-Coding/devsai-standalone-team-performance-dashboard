@@ -108,22 +108,12 @@ export const ACK_UNDER_5: KpiDef = {
   showOnTeam: true,
 };
 
-export const IMPORT_KPI_DEFS: KpiDef[] = [...KPI_DEFS, ACK_UNDER_5];
-
-export const KPI_BY_KEY = Object.fromEntries(IMPORT_KPI_DEFS.map((k) => [k.key, k])) as Record<
+export const KPI_BY_KEY = Object.fromEntries([...KPI_DEFS, ACK_UNDER_5].map((k) => [k.key, k])) as Record<
   KpiKey,
   KpiDef
 >;
 
 export const TEAM_KPI_DEFS = KPI_DEFS.filter((k) => k.showOnTeam);
-
-export const REQUIRED_IMPORT_COLUMNS = [
-  "date",
-  "team",
-  "agent",
-  "metric_key",
-  "value",
-] as const;
 
 export function formatKpi(value: number, unit: KpiUnit) {
   if (!Number.isFinite(value)) return "—";
