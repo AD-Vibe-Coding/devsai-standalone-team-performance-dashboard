@@ -4,7 +4,8 @@ export type KpiKey =
   | "carrier_open_sla_pct"
   | "refused_calls"
   | "asa_seconds"
-  | "mobility_sla_pct";
+  | "mobility_sla_pct"
+  | "closed_under_24h_pct";
 
 export type KpiUnit = "number" | "percent" | "seconds";
 

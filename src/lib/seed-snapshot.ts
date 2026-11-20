@@ -105,6 +105,7 @@ const SNAPSHOT_QUARTER: Record<string, KpiMap> = {
     refused_calls: 1,
     asa_seconds: 6.1,
     mobility_sla_pct: 94.1,
+    closed_under_24h_pct: 90.1,
   },
   "Marcus Chen": {
     avg_ack_seconds: 159,
@@ -113,6 +114,7 @@ const SNAPSHOT_QUARTER: Record<string, KpiMap> = {
     refused_calls: 2,
     asa_seconds: 7.5,
     mobility_sla_pct: 88.9,
+    closed_under_24h_pct: 85.2,
   },
   "Sam Okonkwo": {
     avg_ack_seconds: 181,
@@ -121,6 +123,7 @@ const SNAPSHOT_QUARTER: Record<string, KpiMap> = {
     refused_calls: 3,
     asa_seconds: 8.2,
     mobility_sla_pct: 87.4,
+    closed_under_24h_pct: 83.0,
   },
   "Avery Kim": {
     avg_ack_seconds: 134,
@@ -129,6 +132,7 @@ const SNAPSHOT_QUARTER: Record<string, KpiMap> = {
     refused_calls: 1,
     asa_seconds: 5.8,
     mobility_sla_pct: 92.0,
+    closed_under_24h_pct: 88.7,
   },
 };
 
