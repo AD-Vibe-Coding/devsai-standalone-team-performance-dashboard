@@ -38,10 +38,11 @@ export const KPI_DEFS: KpiDef[] = [
     unit: "seconds",
     higherIsBetter: false,
     description:
-      "How long it takes to acknowledge a ticket. Member target is under 3 minutes. The floor-wide SLA is the share of tickets acknowledged under 5 minutes.",
-    formula: "Member: mean ack seconds. Overall: tickets acked in under 5 minutes ÷ tickets × 100.",
+      "How long it takes to acknowledge a ticket. Member target is under 3 minutes. The floor-wide SLA is more than 95% of tickets acknowledged under 5 minutes.",
+    formula:
+      "Member: mean ack seconds. Overall: tickets acked in under 5 minutes ÷ tickets × 100. Overall SLA: more than 95%.",
     memberSla: { kind: "under", value: 180, label: "under 3 minutes" },
-    overallSla: { kind: "display", label: "% of tickets acked under 5 minutes" },
+    overallSla: { kind: "at_least", value: 95, label: "more than 95% of tickets acked under 5 minutes" },
     showOnTeam: true,
   },
   {
@@ -104,7 +105,7 @@ export const ACK_UNDER_5: KpiDef = {
   description: "Share of tickets acknowledged in under 5 minutes (overall Avg Ack SLA).",
   formula: "Tickets acked in under 5 minutes ÷ tickets × 100.",
   memberSla: { kind: "display", label: "feeds overall Avg Ack" },
-  overallSla: { kind: "display", label: "% of tickets acked under 5 minutes" },
+  overallSla: { kind: "at_least", value: 95, label: "more than 95% of tickets acked under 5 minutes" },
   showOnTeam: true,
 };
 
