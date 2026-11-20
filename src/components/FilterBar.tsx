@@ -38,7 +38,6 @@ export function FilterBar({
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All teams</SelectItem>
             {TEAMS.map((t) => (
               <SelectItem key={t.slug} value={t.slug}>
                 {t.name}
