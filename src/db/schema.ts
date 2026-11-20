@@ -1,21 +1,19 @@
 import { pgTable, serial, text, integer, real, timestamp } from "drizzle-orm/pg-core";
 
-/** Teams shown in filters and KPI rollups. Edit names here, then Push to Supabase. */
 export const teams = pgTable("teams", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   slug: text("slug").notNull(),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  created_at: timestamp("created_at").defaultNow(),
 });
 
-/** Roster + role mapping. Treat as app-specific — update rows, not code, when people change. */
 export const staff = pgTable("staff", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   email: text("email").notNull(),
   team_slug: text("team_slug").notNull(),
   role: text("role").notNull(),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  created_at: timestamp("created_at").defaultNow(),
 });
 
 export const import_batches = pgTable("import_batches", {
@@ -27,7 +25,7 @@ export const import_batches = pgTable("import_batches", {
   imported_by: text("imported_by").notNull(),
   period_start: text("period_start"),
   period_end: text("period_end"),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  created_at: timestamp("created_at").defaultNow(),
 });
 
 export const metric_records = pgTable("metric_records", {
@@ -38,7 +36,7 @@ export const metric_records = pgTable("metric_records", {
   metric_key: text("metric_key").notNull(),
   metric_value: real("metric_value").notNull(),
   import_id: integer("import_id"),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  created_at: timestamp("created_at").defaultNow(),
 });
 
 export const disputes = pgTable("disputes", {
@@ -49,5 +47,5 @@ export const disputes = pgTable("disputes", {
   status: text("status").notNull(),
   reviewer: text("reviewer"),
   review_note: text("review_note"),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  created_at: timestamp("created_at").defaultNow(),
 });

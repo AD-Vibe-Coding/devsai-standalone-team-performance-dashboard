@@ -41,10 +41,7 @@ export default function Disputes() {
 
   async function review(id: number, status: "approved" | "rejected") {
     try {
-      await api.patch(`/api/disputes/${id}`, {
-        status,
-        review_note: notes[id] ?? "",
-      });
+      await reviewDispute(id, status, notes[id] ?? "");
       load();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Review failed");

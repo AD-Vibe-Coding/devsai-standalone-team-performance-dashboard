@@ -74,7 +74,7 @@ export default function RawData() {
     if (!open) return;
     setSaving(true);
     try {
-      await api.post("/api/disputes", { metric_record_id: open.id, reason });
+      await createDispute(open.id, reason);
       setOpen(null);
       setReason("");
     } catch (e) {

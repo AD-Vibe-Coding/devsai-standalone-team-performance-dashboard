@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { api } from "@/lib/api";
+import { loadOverview } from "@/lib/data";
 import { KPI_DEFS, formatKpi } from "@/lib/kpis";
 import { TEAMS } from "@/lib/roster";
 import { FilterBar, defaultFilters, type Filters } from "@/components/FilterBar";

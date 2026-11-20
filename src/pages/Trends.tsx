@@ -27,14 +27,7 @@ export default function Trends() {
     let cancelled = false;
     setLoading(true);
     setError(null);
-    const qs = new URLSearchParams({
-      team: filters.team,
-      from: filters.from,
-      to: filters.to,
-      metric,
-    });
-    api
-      .get<{ series: Point[] }>(`/api/trends?${qs}`)
+    loadTrends(filters.team, filters.from, filters.to, metric)
       .then((d) => {
         if (!cancelled) setSeries(d.series);
       })

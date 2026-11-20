@@ -33,9 +33,8 @@ export default function ImportPage() {
 
   const load = () => {
     setLoading(true);
-    api
-      .get<Batch[]>("/api/imports")
-      .then(setHistory)
+    loadImports()
+      .then((rows) => setHistory(rows as Batch[]))
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
   };
