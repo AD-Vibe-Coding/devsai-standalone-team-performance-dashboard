@@ -11,7 +11,7 @@ import {
 } from "recharts";
 import { KPI_BY_KEY, KPI_DEFS, formatKpi } from "@/lib/kpis";
 import { VOLUME_DEFS } from "@/lib/volumes";
-import { snapshotTrends, type TrendGrain } from "@/lib/seed-snapshot";
+import { snapshotTrends, topCarriers, type TrendGrain } from "@/lib/seed-snapshot";
 import { Card, CardContent } from "@/components/ui/card";
 import { BlurFade } from "@/components/ui/blur-fade";
 import { NumberTicker } from "@/components/ui/number-ticker";
