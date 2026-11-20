@@ -229,3 +229,69 @@ export function snapshotCompare(period: ComparePeriod) {
   if (period === "quarter") return overviewFrom(SNAPSHOT_QUARTER, VOLUMES_QUARTER);
   return overviewFrom(SNAPSHOT_MONTH, VOLUMES_MONTH);
 }
+
+export type TrendGrain = "month" | "quarter";
+
+export type TrendPoint = {
+  label: string;
+  volumes: VolumeTotals;
+  kpis: Record<string, number>;
+};
+
+const MONTH_LABELS = [
+  "Apr 25",
+  "May 25",
+  "Jun 25",
+  "Jul 25",
+  "Aug 25",
+  "Sep 25",
+  "Oct 25",
+  "Nov 25",
+  "Dec 25",
+  "Jan 26",
+  "Feb 26",
+  "Mar 26",
+  "Apr 26",
+];
+
+const QUARTER_LABELS = ["Q2 25", "Q3 25", "Q4 25", "Q1 26", "Q2 26"];
+
+const CURRENT_VOLUMES = overviewFrom(SNAPSHOT, VOLUMES).volumes;
+const CURRENT_KPIS = overviewFrom(SNAPSHOT, VOLUMES).kpis;
+
+function scaleVolumes(base: VolumeTotals, factor: number): VolumeTotals {
+  return {
+    tickets_received: Math.round(base.tickets_received * factor),
+    inbound_calls: Math.round(base.inbound_calls * factor),
+    outbound_calls: Math.round(base.outbound_calls * factor),
+    mobility_tasks: Math.round(base.mobility_tasks * factor),
+  };
+}
+
+function wobbleKpi(key: string, value: number, i: number, n: number) {
+  const t = (i + 1) / n;
+  const wave = Math.sin(i * 0.9) * 0.6;
+  if (key.includes("pct")) return Number(Math.min(99.5, Math.max(82, value - 2.4 + t * 2.2 + wave)).toFixed(1));
+  if (key.includes("seconds") || key === "asa_seconds" || key === "avg_ack_seconds") {
+    return Number(Math.max(3, value + 1.8 - t * 1.6 + wave * 0.4).toFixed(1));
+  }
+  return Number(Math.max(0, value + (i % 3 === 0 ? 1 : 0) - (i % 5 === 0 ? 1 : 0)).toFixed(0));
+}
+
+export function snapshotTrends(grain: TrendGrain): TrendPoint[] {
+  const labels = grain === "quarter" ? QUARTER_LABELS : MONTH_LABELS;
+  const n = labels.length;
+  const volFactors =
+    grain === "quarter"
+      ? [0.88, 0.91, 0.94, 0.97, 1]
+      : [0.82, 0.84, 0.86, 0.88, 0.9, 0.91, 0.93, 0.94, 0.95, 0.97, 0.98, 0.99, 1];
+
+  return labels.map((label, i) => {
+    const volumes = scaleVolumes(CURRENT_VOLUMES, volFactors[i] ?? 1);
+    const kpis: Record<string, number> = {};
+    for (const [key, cell] of Object.entries(CURRENT_KPIS)) {
+      kpis[key] = wobbleKpi(key, cell.value, i, n);
+    }
+    return { label, volumes, kpis };
+  });
+}
