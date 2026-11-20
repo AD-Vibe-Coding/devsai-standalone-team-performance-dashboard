@@ -75,7 +75,10 @@ export default function ImportPage() {
         <p className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">Ingest</p>
         <h1 className="font-display mt-1 text-3xl">Import metrics</h1>
         <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-          CSV or Excel-exported CSV. Columns: date, team, agent, metric_key, value. Managers only.
+          Two formats. Metric CSV: date, team, agent, metric_key, value. Ticket export CSV: date in
+          AK, Ticket Acked By in AA, Ticket Acked time in Z, Time to open ticket with the carrier in
+          W (computes Avg Ack and carrier-open SLA). Refused calls, ASA, and Mobility still need
+          those columns. Managers only.
         </p>
       </div>
       {error ? <ErrorState message={error} /> : null}
