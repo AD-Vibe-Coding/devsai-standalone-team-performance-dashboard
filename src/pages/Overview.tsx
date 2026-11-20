@@ -27,13 +27,7 @@ export default function Overview() {
     let cancelled = false;
     setLoading(true);
     setError(null);
-    const qs = new URLSearchParams({
-      team: filters.team,
-      from: filters.from,
-      to: filters.to,
-    });
-    api
-      .get<Overview>(`/api/overview?${qs}`)
+    loadOverview(filters.team, filters.from, filters.to)
       .then((d) => {
         if (!cancelled) setData(d);
       })

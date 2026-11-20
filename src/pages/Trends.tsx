@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { api } from "@/lib/api";
+import { loadTrends } from "@/lib/data";
 import { KPI_DEFS, type KpiKey, formatKpi } from "@/lib/kpis";
 import { FilterBar, defaultFilters, type Filters } from "@/components/FilterBar";
 import { EmptyState, ErrorState, LoadingBlock } from "@/components/States";

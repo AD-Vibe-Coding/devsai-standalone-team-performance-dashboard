@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { api } from "@/lib/api";
+import { loadMetrics, createDispute } from "@/lib/data";
 import { KPI_DEFS, formatKpi, KPI_BY_KEY, type KpiKey } from "@/lib/kpis";
 import { FilterBar, defaultFilters, type Filters } from "@/components/FilterBar";
 import { EmptyState, ErrorState, LoadingBlock } from "@/components/States";
@@ -47,17 +47,15 @@ export default function RawData() {
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    const qs = new URLSearchParams({
+    loadMetrics({
       team: filters.team,
       from: filters.from,
       to: filters.to,
       q,
-    });
-    if (metric !== "all") qs.set("metric", metric);
-    api
-      .get<Row[]>(`/api/metrics?${qs}`)
+      metric: metric === "all" ? undefined : metric,
+    })
       .then((d) => {
-        if (!cancelled) setRows(d);
+        if (!cancelled) setRows(d as Row[]);
       })
       .catch((e) => {
         if (!cancelled) setError(e.message);

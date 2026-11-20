@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { api } from "@/lib/api";
+import { loadDisputes, reviewDispute } from "@/lib/data";
 import { EmptyState, ErrorState, LoadingBlock } from "@/components/States";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -28,9 +28,8 @@ export default function Disputes() {
 
   const load = () => {
     setLoading(true);
-    api
-      .get<Dispute[]>("/api/disputes")
-      .then(setRows)
+    loadDisputes()
+      .then((r) => setRows(r as Dispute[]))
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
   };

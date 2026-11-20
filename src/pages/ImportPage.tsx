@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { api } from "@/lib/api";
+import { loadImports, runImport } from "@/lib/data";
 import { parseImportText, sampleCsv } from "@/lib/parse-import";
 import { downloadBlob } from "@/lib/download";
 import { EmptyState, ErrorState, LoadingBlock } from "@/components/States";
@@ -58,10 +58,7 @@ export default function ImportPage() {
     }
     setBusy(true);
     try {
-      const result = await api.post<{ accepted: number; errors: string[] }>("/api/imports", {
-        filename: file.name,
-        rows: parsed.rows,
-      });
+      const result = await runImport(file.name, parsed.rows);
       setNote(`Imported ${result.accepted} rows.`);
       setPreviewErrors(result.errors ?? []);
       load();
