@@ -23,8 +23,18 @@ export default function Help() {
               <p className="text-muted-foreground">
                 Formula: <span className="text-foreground">{k.formula}</span>
               </p>
+              <p>
+                Member SLA: <span className="font-medium">{k.memberSla.label}</span>
+              </p>
+              <p>
+                Overall SLA:{" "}
+                <span className="font-medium">
+                  {k.overallSla ? k.overallSla.label : "not scored for the team"}
+                </span>
+              </p>
               <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                Import key · {k.key} · {k.higherIsBetter ? "higher is better" : "lower is better"}
+                Import key · {k.key}
+                {k.overallKey ? ` · overall uses ${k.overallKey}` : ""}
               </p>
             </CardContent>
           </Card>

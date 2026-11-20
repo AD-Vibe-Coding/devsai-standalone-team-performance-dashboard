@@ -1,4 +1,4 @@
-import { REQUIRED_IMPORT_COLUMNS, type KpiKey, KPI_BY_KEY } from "./kpis";
+import { REQUIRED_IMPORT_COLUMNS, type KpiKey, KPI_BY_KEY, IMPORT_KPI_DEFS } from "./kpis";
 
 export type ParsedRow = {
   date: string;

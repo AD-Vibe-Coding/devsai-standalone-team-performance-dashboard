@@ -104,7 +104,7 @@ export default function Overview() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Team</TableHead>
-                    {KPI_DEFS.map((k) => (
+                    {TEAM_KPI_DEFS.map((k) => (
                       <TableHead key={k.key} className="text-right">
                         {k.short}
                       </TableHead>

@@ -17,7 +17,7 @@ type Point = { date: string } & Record<string, number | string>;
 
 export default function Trends() {
   const [filters, setFilters] = useState<Filters>(defaultFilters);
-  const [metric, setMetric] = useState<KpiKey>("csat");
+  const [metric, setMetric] = useState<KpiKey>("asa_seconds");
   const [series, setSeries] = useState<Point[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
