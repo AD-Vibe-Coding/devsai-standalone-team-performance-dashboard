@@ -3,11 +3,17 @@ import { drizzle } from "drizzle-orm/pglite";
 import { sql } from "drizzle-orm";
 import * as schema from "./schema";
 
-const client = new PGlite("./pgdata");
-export const db = drizzle(client, { schema });
+let client: PGlite | null = null;
+let dbInstance: ReturnType<typeof drizzle<typeof schema>> | null = null;
+
 export { schema };
 
 export const dbReady = (async () => {
+  // IndexedDB in the browser — a filesystem path calls Node path.resolve and throws
+  // "o.resolve is not a function".
+  client = await PGlite.create("idb://team-performance");
+  dbInstance = drizzle(client, { schema });
+  const db = dbInstance;
   await db.execute(sql`
     CREATE TABLE IF NOT EXISTS teams (
       id SERIAL PRIMARY KEY,
@@ -63,4 +69,14 @@ export const dbReady = (async () => {
       created_at TIMESTAMP DEFAULT NOW()
     )
   `);
+  return db;
 })();
+
+export const db = new Proxy({} as ReturnType<typeof drizzle<typeof schema>>, {
+  get(_target, prop) {
+    if (!dbInstance) {
+      throw new Error("Database is not ready. Await dbReady first.");
+    }
+    return (dbInstance as unknown as Record<string | symbol, unknown>)[prop];
+  },
+});
