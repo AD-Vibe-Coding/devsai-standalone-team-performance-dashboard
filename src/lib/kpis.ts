@@ -5,7 +5,8 @@ export type KpiKey =
   | "refused_calls"
   | "asa_seconds"
   | "mobility_sla_pct"
-  | "closed_under_24h_pct";
+  | "closed_under_24h_pct"
+  | "avg_mttr_seconds";
 
 export type KpiUnit = "number" | "percent" | "seconds";
 
@@ -121,6 +122,11 @@ export function formatKpi(value: number, unit: KpiUnit) {
   if (!Number.isFinite(value)) return "—";
   if (unit === "percent") return `${value.toFixed(1)}%`;
   if (unit === "seconds") {
+    if (value >= 3600) {
+      const h = Math.floor(value / 3600);
+      const m = Math.round((value % 3600) / 60);
+      return `${h}h ${m}m`;
+    }
     if (value < 60) return `${value.toFixed(value % 1 === 0 ? 0 : 1)}s`;
     const m = Math.floor(value / 60);
     const s = Math.round(value % 60);

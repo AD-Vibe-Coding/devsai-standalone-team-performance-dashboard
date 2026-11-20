@@ -19,6 +19,8 @@ const SNAPSHOT: Record<string, KpiMap> = {
     refused_calls: 0,
     asa_seconds: 5.2,
     mobility_sla_pct: 97.4,
+    closed_under_24h_pct: 93.6,
+    avg_mttr_seconds: 11840,
   },
   "Marcus Chen": {
     avg_ack_seconds: 142,
@@ -43,6 +45,8 @@ const SNAPSHOT: Record<string, KpiMap> = {
     refused_calls: 0,
     asa_seconds: 4.9,
     mobility_sla_pct: 95.2,
+    closed_under_24h_pct: 91.8,
+    avg_mttr_seconds: 12460,
   },
 };
 
@@ -133,6 +137,7 @@ const SNAPSHOT_QUARTER: Record<string, KpiMap> = {
     asa_seconds: 5.8,
     mobility_sla_pct: 92.0,
     closed_under_24h_pct: 88.7,
+    avg_mttr_seconds: 13620,
   },
 };
 
@@ -343,6 +348,34 @@ export function snapshotAt(grain: PeriodGrain, index: number) {
     previousLabel = prior.label;
   }
   return { overview, boards, label, previous, previousLabel };
+}
+
+export type CarrierRank = {
+  name: string;
+  tickets: number;
+  share: number;
+};
+
+const CARRIER_WEIGHTS = [
+  { name: "Verizon", weight: 28 },
+  { name: "AT&T", weight: 22 },
+  { name: "T-Mobile", weight: 18 },
+  { name: "Lumen", weight: 12 },
+  { name: "Comcast Business", weight: 9 },
+  { name: "Spectrum", weight: 7 },
+  { name: "Cogent", weight: 4 },
+];
+
+export function topCarriers(grain: TrendGrain, limit = 5): CarrierRank[] {
+  const series = snapshotTrends(grain);
+  const totalTickets = series.reduce((sum, p) => sum + p.volumes.tickets_received, 0);
+  const totalWeight = CARRIER_WEIGHTS.reduce((sum, c) => sum + c.weight, 0);
+  return CARRIER_WEIGHTS.map((c) => {
+    const tickets = Math.round(totalTickets * (c.weight / totalWeight));
+    return { name: c.name, tickets, share: totalTickets ? tickets / totalTickets : 0 };
+  })
+    .sort((a, b) => b.tickets - a.tickets)
+    .slice(0, limit);
 }
 
 export function snapshotTrends(grain: TrendGrain): TrendPoint[] {

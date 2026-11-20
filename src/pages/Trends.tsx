@@ -187,7 +187,9 @@ function MetricTrend({
 export default function Trends() {
   const [grain, setGrain] = useState<TrendGrain>("month");
   const series = snapshotTrends(grain);
+  const carriers = topCarriers(grain);
   const windowLabel = grain === "month" ? "13 months" : "5 quarters";
+  const maxCarrier = carriers[0]?.tickets ?? 1;
 
   return (
     <div className="space-y-8">
@@ -238,8 +240,41 @@ export default function Trends() {
       </div>
 
       <div>
+        <h2 className="font-display text-2xl">Top 5 carriers</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Ticket volume by carrier across the last {windowLabel}.
+        </p>
+      </div>
+      <Card>
+        <CardContent className="space-y-4 p-5">
+          {carriers.map((c, i) => (
+            <div key={c.name} className="grid grid-cols-[2rem_1fr_auto] items-center gap-3">
+              <span className="font-display text-sm tabular-nums text-muted-foreground">{i + 1}</span>
+              <div>
+                <div className="flex items-baseline justify-between gap-3">
+                  <p className="text-sm font-medium">{c.name}</p>
+                  <p className="text-xs tabular-nums text-muted-foreground">
+                    {(c.share * 100).toFixed(1)}%
+                  </p>
+                </div>
+                <div className="mt-1 h-2 overflow-hidden rounded-full bg-muted">
+                  <div
+                    className="h-full rounded-full bg-primary"
+                    style={{ width: `${Math.max(6, (c.tickets / maxCarrier) * 100)}%` }}
+                  />
+                </div>
+              </div>
+              <p className="w-16 text-right text-sm font-semibold tabular-nums">
+                {c.tickets.toLocaleString("en-US")}
+              </p>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+
+      <div>
         <h2 className="font-display text-2xl">SLA</h2>
-        <p className="mt-1 text-sm text-muted-foreground">Floor-wide rates over the same window.</p>
+        <p className="mt-1 text-sm text-muted-foreground">Floor-wide rates over the same window, including Avg MTTR.</p>
       </div>
       <div className="grid gap-4 lg:grid-cols-2">
         {KPI_DEFS.filter((k) => k.showOnTeam).map((k) => {
