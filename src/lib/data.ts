@@ -40,6 +40,41 @@ export async function loadOverview(team: string, from: string, to: string) {
   return { kpis, teams, rowCount: rows.length };
 }
 
+export type LeaderboardRow = {
+  agent: string;
+  team: string;
+  value: number;
+};
+
+export async function loadLeaderboards(team: string, from: string, to: string) {
+  await dbReady;
+  const cond = [
+    from ? gte(schema.metric_records.period_date, from) : undefined,
+    to ? lte(schema.metric_records.period_date, to) : undefined,
+    team && team !== "all" ? eq(schema.metric_records.team_slug, team) : undefined,
+  ].filter(Boolean) as Parameters<typeof and>[0][];
+
+  const rows = await db
+    .select()
+    .from(schema.metric_records)
+    .where(cond.length ? and(...cond) : undefined);
+
+  const byAgent: Record<string, { team: string; metrics: Record<string, number[]> }> = {};
+  for (const r of rows) {
+    byAgent[r.agent_name] ??= { team: r.team_slug, metrics: {} };
+    (byAgent[r.agent_name].metrics[r.metric_key] ??= []).push(r.metric_value);
+  }
+  const avg = (arr: number[]) => (arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 0);
+
+  const boards: Record<string, LeaderboardRow[]> = {};
+  for (const [agent, info] of Object.entries(byAgent)) {
+    for (const [key, vals] of Object.entries(info.metrics)) {
+      (boards[key] ??= []).push({ agent, team: info.team, value: avg(vals) });
+    }
+  }
+  return boards;
+}
+
 export async function loadTrends(team: string, from: string, to: string, metric: string) {
   await dbReady;
   const cond = [

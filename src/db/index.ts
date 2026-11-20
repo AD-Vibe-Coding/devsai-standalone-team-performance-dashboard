@@ -69,6 +69,7 @@ export const dbReady = (async () => {
       created_at TIMESTAMP DEFAULT NOW()
     )
   `);
+  await seedSnapshotIfEmpty(db);
   return db;
 })();
 
