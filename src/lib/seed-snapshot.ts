@@ -4,8 +4,13 @@ import type { VolumeKey } from "./volumes";
 
 const STAFF = ROSTER.filter((p) => p.role === "staff");
 
-/** Stable snapshot so the home dashboard is filled on first open. */
-const SNAPSHOT: Record<string, Partial<Record<KpiKey, number>>> = {
+export type ComparePeriod = "month" | "quarter";
+
+type KpiMap = Partial<Record<KpiKey, number>>;
+type VolumeMap = Record<VolumeKey, number>;
+
+/** Current snapshot (this month). */
+const SNAPSHOT: Record<string, KpiMap> = {
   "Priya Shah": {
     avg_ack_seconds: 95,
     ack_under_5_pct: 94.2,
@@ -40,31 +45,97 @@ const SNAPSHOT: Record<string, Partial<Record<KpiKey, number>>> = {
   },
 };
 
-const VOLUMES: Record<string, Record<VolumeKey, number>> = {
+const VOLUMES: Record<string, VolumeMap> = {
+  "Priya Shah": { tickets_received: 412, inbound_calls: 286, outbound_calls: 94, mobility_tasks: 61 },
+  "Marcus Chen": { tickets_received: 338, inbound_calls: 241, outbound_calls: 118, mobility_tasks: 47 },
+  "Sam Okonkwo": { tickets_received: 305, inbound_calls: 198, outbound_calls: 132, mobility_tasks: 39 },
+  "Avery Kim": { tickets_received: 274, inbound_calls: 167, outbound_calls: 88, mobility_tasks: 72 },
+};
+
+/** Previous calendar month — slightly softer volumes, mixed SLA. */
+const SNAPSHOT_MONTH: Record<string, KpiMap> = {
   "Priya Shah": {
-    tickets_received: 412,
-    inbound_calls: 286,
-    outbound_calls: 94,
-    mobility_tasks: 61,
+    avg_ack_seconds: 108,
+    ack_under_5_pct: 92.1,
+    carrier_open_sla_pct: 94.8,
+    refused_calls: 0,
+    asa_seconds: 5.6,
+    mobility_sla_pct: 96.0,
   },
   "Marcus Chen": {
-    tickets_received: 338,
-    inbound_calls: 241,
-    outbound_calls: 118,
-    mobility_tasks: 47,
+    avg_ack_seconds: 151,
+    ack_under_5_pct: 86.4,
+    carrier_open_sla_pct: 90.1,
+    refused_calls: 2,
+    asa_seconds: 7.1,
+    mobility_sla_pct: 90.4,
   },
   "Sam Okonkwo": {
-    tickets_received: 305,
-    inbound_calls: 198,
-    outbound_calls: 132,
-    mobility_tasks: 39,
+    avg_ack_seconds: 174,
+    ack_under_5_pct: 84.2,
+    carrier_open_sla_pct: 88.0,
+    refused_calls: 1,
+    asa_seconds: 7.8,
+    mobility_sla_pct: 89.6,
   },
   "Avery Kim": {
-    tickets_received: 274,
-    inbound_calls: 167,
-    outbound_calls: 88,
-    mobility_tasks: 72,
+    avg_ack_seconds: 126,
+    ack_under_5_pct: 90.3,
+    carrier_open_sla_pct: 92.5,
+    refused_calls: 1,
+    asa_seconds: 5.3,
+    mobility_sla_pct: 93.8,
   },
+};
+
+const VOLUMES_MONTH: Record<string, VolumeMap> = {
+  "Priya Shah": { tickets_received: 388, inbound_calls: 271, outbound_calls: 101, mobility_tasks: 55 },
+  "Marcus Chen": { tickets_received: 351, inbound_calls: 229, outbound_calls: 109, mobility_tasks: 51 },
+  "Sam Okonkwo": { tickets_received: 292, inbound_calls: 210, outbound_calls: 121, mobility_tasks: 42 },
+  "Avery Kim": { tickets_received: 261, inbound_calls: 174, outbound_calls: 79, mobility_tasks: 68 },
+};
+
+/** Previous quarter monthly-equivalent averages (so volumes stay comparable to this month). */
+const SNAPSHOT_QUARTER: Record<string, KpiMap> = {
+  "Priya Shah": {
+    avg_ack_seconds: 121,
+    ack_under_5_pct: 90.4,
+    carrier_open_sla_pct: 93.2,
+    refused_calls: 1,
+    asa_seconds: 6.1,
+    mobility_sla_pct: 94.1,
+  },
+  "Marcus Chen": {
+    avg_ack_seconds: 159,
+    ack_under_5_pct: 84.8,
+    carrier_open_sla_pct: 88.7,
+    refused_calls: 2,
+    asa_seconds: 7.5,
+    mobility_sla_pct: 88.9,
+  },
+  "Sam Okonkwo": {
+    avg_ack_seconds: 181,
+    ack_under_5_pct: 82.6,
+    carrier_open_sla_pct: 86.9,
+    refused_calls: 3,
+    asa_seconds: 8.2,
+    mobility_sla_pct: 87.4,
+  },
+  "Avery Kim": {
+    avg_ack_seconds: 134,
+    ack_under_5_pct: 88.9,
+    carrier_open_sla_pct: 91.0,
+    refused_calls: 1,
+    asa_seconds: 5.8,
+    mobility_sla_pct: 92.0,
+  },
+};
+
+const VOLUMES_QUARTER: Record<string, VolumeMap> = {
+  "Priya Shah": { tickets_received: 369, inbound_calls: 258, outbound_calls: 108, mobility_tasks: 52 },
+  "Marcus Chen": { tickets_received: 320, inbound_calls: 218, outbound_calls: 97, mobility_tasks: 44 },
+  "Sam Okonkwo": { tickets_received: 278, inbound_calls: 189, outbound_calls: 140, mobility_tasks: 36 },
+  "Avery Kim": { tickets_received: 249, inbound_calls: 155, outbound_calls: 71, mobility_tasks: 64 },
 };
 
 export type LeaderboardRow = {
@@ -91,10 +162,10 @@ function addVolumes(a: VolumeTotals, b: VolumeTotals): VolumeTotals {
   };
 }
 
-export function snapshotLeaderboards(): Record<string, LeaderboardRow[]> {
+function boardsFrom(source: Record<string, KpiMap>): Record<string, LeaderboardRow[]> {
   const boards: Record<string, LeaderboardRow[]> = {};
   for (const person of STAFF) {
-    const base = SNAPSHOT[person.name];
+    const base = source[person.name];
     if (!base) continue;
     for (const [key, value] of Object.entries(base)) {
       (boards[key] ??= []).push({
@@ -107,8 +178,8 @@ export function snapshotLeaderboards(): Record<string, LeaderboardRow[]> {
   return boards;
 }
 
-export function snapshotOverview() {
-  const boards = snapshotLeaderboards();
+function overviewFrom(kpiSource: Record<string, KpiMap>, volumeSource: Record<string, VolumeMap>) {
+  const boards = boardsFrom(kpiSource);
   const avg = (arr: number[]) => (arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 0);
   const kpis = Object.fromEntries(
     Object.entries(boards).map(([k, rows]) => [k, { value: avg(rows.map((r) => r.value)), n: rows.length }]),
@@ -124,7 +195,7 @@ export function snapshotOverview() {
   const volumesByTier: Record<string, VolumeTotals> = {};
   let volumes: VolumeTotals = { ...EMPTY_VOLUMES };
   for (const person of STAFF) {
-    const v = VOLUMES[person.name];
+    const v = volumeSource[person.name];
     if (!v) continue;
     volumes = addVolumes(volumes, v);
     volumesByTier[person.tier] = addVolumes(volumesByTier[person.tier] ?? EMPTY_VOLUMES, v);
@@ -144,4 +215,17 @@ export function snapshotOverview() {
     );
   const rowCount = Object.values(boards).reduce((n, rows) => n + rows.length, 0);
   return { kpis, teams, rowCount, volumes };
+}
+
+export function snapshotLeaderboards(): Record<string, LeaderboardRow[]> {
+  return boardsFrom(SNAPSHOT);
+}
+
+export function snapshotOverview() {
+  return overviewFrom(SNAPSHOT, VOLUMES);
+}
+
+export function snapshotCompare(period: ComparePeriod) {
+  if (period === "quarter") return overviewFrom(SNAPSHOT_QUARTER, VOLUMES_QUARTER);
+  return overviewFrom(SNAPSHOT_MONTH, VOLUMES_MONTH);
 }

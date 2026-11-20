@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   KPI_BY_KEY,
   KPI_DEFS,
@@ -9,40 +10,70 @@ import {
 import { VOLUME_DEFS } from "@/lib/volumes";
 import { tierName } from "@/lib/roster";
 import {
+  snapshotCompare,
   snapshotLeaderboards,
   snapshotOverview,
+  type ComparePeriod,
   type LeaderboardRow,
 } from "@/lib/seed-snapshot";
+import { Delta } from "@/components/Delta";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { NumberTicker } from "@/components/ui/number-ticker";
 import { BlurFade } from "@/components/ui/blur-fade";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 function rankRows(rows: LeaderboardRow[], higherIsBetter: boolean) {
   return [...rows].sort((a, b) => (higherIsBetter ? b.value - a.value : a.value - b.value));
 }
 
 export default function Overview() {
+  const [period, setPeriod] = useState<ComparePeriod>("month");
   const data = snapshotOverview();
+  const prior = snapshotCompare(period);
   const boards = snapshotLeaderboards();
 
   return (
     <div className="space-y-8">
       <BlurFade>
-        <div>
-          <p className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">NOC</p>
-          <h1 className="font-display mt-1 text-3xl md:text-4xl">Overall team performance</h1>
-          <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-            Floor-wide volumes and SLA for NOC, then a leaderboard for each metric — best to last.
-            Snapshot numbers for Tier 1–3.
-          </p>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">NOC</p>
+            <h1 className="font-display mt-1 text-3xl md:text-4xl">Overall team performance</h1>
+            <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
+              Floor-wide volumes and SLA for NOC, then a leaderboard for each metric — best to last.
+              Snapshot numbers for Tier 1–3.
+            </p>
+          </div>
+          <div className="w-full sm:w-[240px]">
+            <label className="mb-1.5 block text-[11px] uppercase tracking-wider text-muted-foreground">
+              Compare to
+            </label>
+            <Select value={period} onValueChange={(v) => setPeriod(v as ComparePeriod)}>
+              <SelectTrigger aria-label="Compare to previous period">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="month">Previous month</SelectItem>
+                <SelectItem value="quarter">Previous quarter</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       </BlurFade>
 
       <div>
         <h2 className="font-display text-2xl">Volumes</h2>
-        <p className="mt-1 text-sm text-muted-foreground">Totals across NOC for this snapshot window.</p>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Totals across NOC. Arrow is vs {period === "month" ? "last month" : "last quarter"}.
+        </p>
       </div>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {VOLUME_DEFS.map((v) => (
@@ -51,8 +82,14 @@ export default function Overview() {
               <CardTitle className="text-sm font-medium text-muted-foreground">{v.label}</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="font-display text-3xl tabular-nums">
+              <p className="font-display flex items-baseline text-3xl tabular-nums">
                 <NumberTicker value={data.volumes[v.key]} />
+                <Delta
+                  current={data.volumes[v.key]}
+                  previous={prior.volumes[v.key]}
+                  higherIsBetter
+                  unit="number"
+                />
               </p>
             </CardContent>
           </Card>
@@ -69,6 +106,7 @@ export default function Overview() {
           const overallDef = KPI_BY_KEY[overallKey];
           const cell = data.kpis[overallKey] ?? data.kpis[k.key];
           const v = cell?.value ?? 0;
+          const priorV = (prior.kpis[overallKey] ?? prior.kpis[k.key])?.value ?? 0;
           const met = slaMet(k.overallSla, v);
           return (
             <Card key={k.key} className="relative overflow-hidden">
@@ -77,11 +115,25 @@ export default function Overview() {
               </CardHeader>
               <CardContent>
                 {overallDef.unit === "seconds" ? (
-                  <p className="font-display text-3xl tabular-nums">{formatKpi(v, overallDef.unit)}</p>
+                  <p className="font-display flex items-baseline text-3xl tabular-nums">
+                    {formatKpi(v, overallDef.unit)}
+                    <Delta
+                      current={v}
+                      previous={priorV}
+                      higherIsBetter={overallDef.higherIsBetter}
+                      unit="seconds"
+                    />
+                  </p>
                 ) : (
-                  <p className="font-display text-3xl tabular-nums">
+                  <p className="font-display flex items-baseline text-3xl tabular-nums">
                     <NumberTicker value={Number(v.toFixed(overallDef.unit === "percent" ? 1 : 0))} />
                     {overallDef.unit === "percent" ? "%" : ""}
+                    <Delta
+                      current={v}
+                      previous={priorV}
+                      higherIsBetter={overallDef.higherIsBetter}
+                      unit={overallDef.unit}
+                    />
                   </p>
                 )}
                 <p className="mt-1 text-xs text-muted-foreground">
