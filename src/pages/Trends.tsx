@@ -12,6 +12,8 @@ import {
 import { KPI_BY_KEY, KPI_DEFS, formatKpi } from "@/lib/kpis";
 import { VOLUME_DEFS } from "@/lib/volumes";
 import { snapshotTrends, topCarriers, type TrendGrain } from "@/lib/seed-snapshot";
+import { useSnapshotUploads } from "@/lib/snapshot-store";
+import type { VolumeKey } from "@/lib/volumes";
 import { Card, CardContent } from "@/components/ui/card";
 import { BlurFade } from "@/components/ui/blur-fade";
 import { NumberTicker } from "@/components/ui/number-ticker";
@@ -187,7 +189,28 @@ function MetricTrend({
 export default function Trends() {
   const [grain, setGrain] = useState<TrendGrain>("month");
   const series = snapshotTrends(grain);
-  const carriers = topCarriers(grain);
+  const { uploads } = useSnapshotUploads();
+  const overlay = uploads.reduce(
+    (acc, u) => ({ volumes: { ...acc.volumes, ...u.volumes }, kpis: { ...acc.kpis, ...u.kpis } }),
+    { volumes: {} as Record<string, number>, kpis: {} as Record<string, number> },
+  );
+  const last = series[series.length - 1];
+  if (last) {
+    last.volumes = { ...last.volumes, ...(overlay.volumes as typeof last.volumes) };
+    last.kpis = { ...last.kpis, ...overlay.kpis };
+  }
+  const carriers = (() => {
+    const base = topCarriers(grain);
+    const extra = uploads.flatMap((u) => u.carriers);
+    if (!extra.length) return base;
+    const map = new Map(base.map((c) => [c.name, c.tickets]));
+    for (const c of extra) map.set(c.name, (map.get(c.name) ?? 0) + c.tickets);
+    const total = [...map.values()].reduce((a, b) => a + b, 0) || 1;
+    return [...map.entries()]
+      .map(([name, tickets]) => ({ name, tickets, share: tickets / total }))
+      .sort((a, b) => b.tickets - a.tickets)
+      .slice(0, 5);
+  })();
   const windowLabel = grain === "month" ? "13 months" : "5 quarters";
   const maxCarrier = carriers[0]?.tickets ?? 1;
 

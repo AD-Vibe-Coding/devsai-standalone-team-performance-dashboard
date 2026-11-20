@@ -95,6 +95,30 @@ export const KPI_DEFS: KpiDef[] = [
     overallSla: { kind: "at_least", value: 90, label: "over 90% under 60 minutes" },
     showOnTeam: true,
   },
+  {
+    key: "closed_under_24h_pct",
+    label: "% of tickets closed under 24 hours",
+    short: "Closed <24h",
+    unit: "percent",
+    higherIsBetter: true,
+    description: "Share of tickets closed within 24 hours of being received.",
+    formula: "Tickets closed in under 24 hours ÷ tickets closed × 100. Member and team SLA: more than 90%.",
+    memberSla: { kind: "at_least", value: 90, label: "more than 90%" },
+    overallSla: { kind: "at_least", value: 90, label: "more than 90%" },
+    showOnTeam: true,
+  },
+  {
+    key: "avg_mttr_seconds",
+    label: "Avg MTTR",
+    short: "MTTR",
+    unit: "seconds",
+    higherIsBetter: false,
+    description: "Mean time to restore or resolve a ticket, from open to close.",
+    formula: "Sum of restore seconds ÷ tickets resolved. Member and team SLA: under 4 hours.",
+    memberSla: { kind: "under", value: 14400, label: "under 4 hours" },
+    overallSla: { kind: "under", value: 14400, label: "under 4 hours" },
+    showOnTeam: true,
+  },
 ];
 
 /** Import-only companion used for overall Avg Ack. Hidden from member tables as a primary KPI. */

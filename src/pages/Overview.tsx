@@ -15,6 +15,8 @@ import {
   type LeaderboardRow,
   type PeriodGrain,
 } from "@/lib/seed-snapshot";
+import { useSnapshotUploads } from "@/lib/snapshot-store";
+import type { VolumeKey } from "@/lib/volumes";
 import { Delta } from "@/components/Delta";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -42,6 +44,18 @@ export default function Overview() {
     grain,
     selectedIndex,
   );
+  const { uploads } = useSnapshotUploads();
+  const overlayVolumes = { ...data.volumes };
+  const overlayKpis = { ...data.kpis };
+  for (const u of uploads) {
+    for (const [k, v] of Object.entries(u.volumes)) {
+      overlayVolumes[k as VolumeKey] = v as number;
+    }
+    for (const [k, v] of Object.entries(u.kpis)) {
+      overlayKpis[k] = { value: v as number, n: overlayKpis[k]?.n ?? 1 };
+    }
+  }
+  const view = { ...data, volumes: overlayVolumes, kpis: overlayKpis };
   const prior = previous;
 
   function onGrainChange(next: PeriodGrain) {
@@ -114,10 +128,10 @@ export default function Overview() {
             </CardHeader>
             <CardContent>
               <p className="font-display flex items-baseline text-3xl tabular-nums">
-                <NumberTicker value={data.volumes[v.key]} />
+                <NumberTicker value={view.volumes[v.key]} />
                 {prior ? (
                   <Delta
-                    current={data.volumes[v.key]}
+                    current={view.volumes[v.key]}
                     previous={prior.volumes[v.key]}
                     higherIsBetter
                     unit="number"
@@ -137,7 +151,7 @@ export default function Overview() {
         {KPI_DEFS.filter((k) => k.showOnTeam).map((k) => {
           const overallKey = k.overallKey ?? k.key;
           const overallDef = KPI_BY_KEY[overallKey];
-          const cell = data.kpis[overallKey] ?? data.kpis[k.key];
+          const cell = view.kpis[overallKey] ?? view.kpis[k.key];
           const v = cell?.value ?? 0;
           const priorV = prior
             ? (prior.kpis[overallKey] ?? prior.kpis[k.key])?.value ?? 0
@@ -213,7 +227,7 @@ export default function Overview() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {data.teams.map((t) => (
+              {view.teams.map((t) => (
                 <TableRow key={t.slug}>
                   <TableCell className="font-medium">{tierName(t.slug)}</TableCell>
                   {VOLUME_DEFS.map((v) => (
