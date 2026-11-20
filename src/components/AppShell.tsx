@@ -1,0 +1,123 @@
+import { NavLink, Outlet } from "react-router-dom";
+import { BarChart3, Flag, HelpCircle, LayoutDashboard, Table2, Upload } from "lucide-react";
+import { ThemeToggle } from "./ThemeToggle";
+import { ROSTER } from "@/lib/roster";
+import { useEffect, useState } from "react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { cn } from "@/lib/utils";
+
+const NAV = [
+  { to: "/", label: "Overview", icon: LayoutDashboard },
+  { to: "/trends", label: "Trends", icon: BarChart3 },
+  { to: "/import", label: "Import", icon: Upload },
+  { to: "/raw", label: "Raw data", icon: Table2 },
+  { to: "/disputes", label: "Disputes", icon: Flag },
+  { to: "/help", label: "KPI guide", icon: HelpCircle },
+];
+
+export function AppShell() {
+  const [actor, setActor] = useState(() => localStorage.getItem("tp_actor") || ROSTER[0].name);
+
+  useEffect(() => {
+    const person = ROSTER.find((p) => p.name === actor) ?? ROSTER[0];
+    localStorage.setItem("tp_actor", person.name);
+    localStorage.setItem("tp_role", person.role);
+  }, [actor]);
+
+  const person = ROSTER.find((p) => p.name === actor) ?? ROSTER[0];
+
+  return (
+    <div className="min-h-screen bg-background text-foreground">
+      <a
+        href="#main"
+        className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:m-3 focus:rounded-md focus:bg-primary focus:px-3 focus:py-2 focus:text-primary-foreground"
+      >
+        Skip to content
+      </a>
+      <header className="sticky top-0 z-40 border-b border-border bg-background/90 backdrop-blur">
+        <div className="mx-auto flex max-w-7xl items-center gap-4 px-4 py-3 md:px-6">
+          <div className="flex items-center gap-2.5">
+            <img
+              src="https://appdirect.com/shortcut-icon.ico"
+              alt=""
+              className="size-7 rounded-sm"
+            />
+            <div className="leading-tight">
+              <p className="font-display text-sm tracking-wide text-foreground">Devs.ai</p>
+              <p className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
+                Team performance
+              </p>
+            </div>
+          </div>
+          <nav className="hidden flex-1 items-center justify-center gap-1 md:flex" aria-label="Primary">
+            {NAV.map((item) => (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                end={item.to === "/"}
+                className={({ isActive }) =>
+                  cn(
+                    "inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm transition-colors duration-150",
+                    isActive
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:bg-secondary hover:text-foreground",
+                  )
+                }
+              >
+                <item.icon className="size-3.5" aria-hidden />
+                {item.label}
+              </NavLink>
+            ))}
+          </nav>
+          <div className="ml-auto flex items-center gap-2">
+            <div className="hidden sm:block">
+              <Select value={actor} onValueChange={setActor}>
+                <SelectTrigger className="h-9 w-[200px]" aria-label="Acting as">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {ROSTER.map((p) => (
+                    <SelectItem key={p.email} value={p.name}>
+                      {p.name} · {p.role}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <ThemeToggle />
+          </div>
+        </div>
+        <nav className="flex gap-1 overflow-x-auto border-t border-border px-3 py-2 md:hidden" aria-label="Mobile">
+          {NAV.map((item) => (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              end={item.to === "/"}
+              className={({ isActive }) =>
+                cn(
+                  "shrink-0 rounded-md px-3 py-1 text-xs",
+                  isActive ? "bg-primary text-primary-foreground" : "text-muted-foreground",
+                )
+              }
+            >
+              {item.label}
+            </NavLink>
+          ))}
+        </nav>
+      </header>
+      <main id="main" className="mx-auto max-w-7xl px-4 py-8 md:px-6">
+        <p className="mb-6 text-xs text-muted-foreground">
+          Signed in as <span className="text-foreground">{person.name}</span> ({person.role}). Roster
+          lives in <code className="text-[11px]">src/lib/roster.ts</code>.
+        </p>
+        <Outlet />
+      </main>
+    </div>
+  );
+}
