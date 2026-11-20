@@ -1,6 +1,7 @@
 import { and, desc, eq, gte, lte } from "drizzle-orm";
 import { db, dbReady, schema } from "../db";
 import type { ParsedRow } from "./parse-import";
+import { snapshotLeaderboards, snapshotOverview } from "./seed-snapshot";
 
 function actor() {
   const role = (localStorage.getItem("tp_role") || "staff") === "manager" ? "manager" : "staff";
@@ -37,6 +38,17 @@ export async function loadOverview(team: string, from: string, to: string) {
     metrics: Object.fromEntries(Object.entries(metrics).map(([k, vals]) => [k, avg(vals)])),
     n: Object.values(metrics)[0]?.length ?? 0,
   }));
+  if (rows.length === 0) {
+    const snap = snapshotOverview();
+    if (team && team !== "all") {
+      return {
+        ...snap,
+        teams: snap.teams.filter((t) => t.slug === team),
+        rowCount: snap.teams.some((t) => t.slug === team) ? snap.rowCount : 0,
+      };
+    }
+    return snap;
+  }
   return { kpis, teams, rowCount: rows.length };
 }
 
@@ -72,7 +84,15 @@ export async function loadLeaderboards(team: string, from: string, to: string) {
       (boards[key] ??= []).push({ agent, team: info.team, value: avg(vals) });
     }
   }
-  if (rows.length === 0) return snapshotLeaderboards();
+  if (rows.length === 0) {
+    const boardsSnap = snapshotLeaderboards();
+    if (team && team !== "all") {
+      return Object.fromEntries(
+        Object.entries(boardsSnap).map(([k, rows]) => [k, rows.filter((r) => r.team === team)]),
+      );
+    }
+    return boardsSnap;
+  }
   return boards;
 }
 

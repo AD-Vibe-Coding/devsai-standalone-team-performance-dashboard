@@ -1,4 +1,4 @@
-import { TEAMS } from "@/lib/roster";
+import { TIERS } from "@/lib/roster";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import {

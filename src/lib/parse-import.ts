@@ -103,7 +103,7 @@ function carrierOnTime(raw: string): boolean | null {
 
 function teamForAgent(name: string) {
   const p = ROSTER.find((r) => r.name.toLowerCase() === name.toLowerCase());
-  return p?.team ?? "noc";
+  return p?.tier ?? "tier-1";
 }
 
 function parseMetricCsv(table: string[][]): ParseResult {
@@ -241,10 +241,10 @@ export function parseImportText(text: string): ParseResult {
 export function sampleCsv() {
   const keys = IMPORT_KPI_DEFS.map((k) => k.key);
   const agents = [
-    ["noc", "Priya Shah"],
-    ["noc", "Marcus Chen"],
-    ["noc", "Sam Okonkwo"],
-    ["noc", "Avery Kim"],
+    ["tier-1", "Priya Shah"],
+    ["tier-2", "Marcus Chen"],
+    ["tier-2", "Sam Okonkwo"],
+    ["tier-3", "Avery Kim"],
   ];
   const lines = ["date,team,agent,metric_key,value"];
   const start = new Date();

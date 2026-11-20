@@ -9,7 +9,7 @@ import {
   slaLabel,
   slaMet,
 } from "@/lib/kpis";
-import { TEAMS } from "@/lib/roster";
+import { TIERS, tierName } from "@/lib/roster";
 import { FilterBar, defaultFilters, type Filters } from "@/components/FilterBar";
 import { EmptyState, ErrorState, LoadingBlock } from "@/components/States";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -29,8 +29,12 @@ function rankRows(rows: LeaderboardRow[], higherIsBetter: boolean) {
   return [...rows].sort((a, b) => (higherIsBetter ? b.value - a.value : a.value - b.value));
 }
 
-function teamName(slug: string) {
-  return TEAMS.find((x) => x.slug === slug)?.name ?? slug;
+function orderTiers(rows: { slug: string }[]) {
+  const order = TIERS.map((t) => t.slug);
+  return [...rows].sort(
+    (a, b) =>
+      order.indexOf(a.slug as (typeof order)[number]) - order.indexOf(b.slug as (typeof order)[number]),
+  );
 }
 
 export default function Overview() {
@@ -132,13 +136,13 @@ export default function Overview() {
 
           <Card>
             <CardHeader>
-              <CardTitle className="font-display text-xl">Team rollup</CardTitle>
+              <CardTitle className="font-display text-xl">Tier rollup</CardTitle>
             </CardHeader>
             <CardContent className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Team</TableHead>
+                    <TableHead>Tier</TableHead>
                     {TEAM_KPI_DEFS.map((k) => (
                       <TableHead key={k.key} className="text-right">
                         {k.short}
@@ -147,9 +151,9 @@ export default function Overview() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {data.teams.map((t) => (
+                  {orderTiers(data.teams).map((t) => (
                     <TableRow key={t.slug}>
-                      <TableCell className="font-medium">{teamName(t.slug)}</TableCell>
+                      <TableCell className="font-medium">{tierName(t.slug)}</TableCell>
                       {TEAM_KPI_DEFS.map((k) => {
                         const overallKey = k.overallKey ?? k.key;
                         const overallDef = KPI_BY_KEY[overallKey];
@@ -193,7 +197,7 @@ export default function Overview() {
                           <TableRow>
                             <TableHead className="w-10">#</TableHead>
                             <TableHead>Agent</TableHead>
-                            <TableHead>Team</TableHead>
+                            <TableHead>Tier</TableHead>
                             <TableHead className="text-right">Value</TableHead>
                             <TableHead className="text-right">SLA</TableHead>
                           </TableRow>

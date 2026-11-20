@@ -48,7 +48,7 @@ export function snapshotLeaderboards(): Record<string, { agent: string; team: st
     const base = SNAPSHOT[person.name];
     if (!base) continue;
     for (const [key, value] of Object.entries(base)) {
-      (boards[key] ??= []).push({ agent: person.name, team: person.team, value: value as number });
+      (boards[key] ??= []).push({ agent: person.name, team: person.tier, value: value as number });
     }
   }
   return boards;
@@ -124,7 +124,7 @@ export async function seedSnapshotIfEmpty(
       for (const r of rows) {
         await db.insert(schema.metric_records).values({
           period_date: date,
-          team_slug: person.team,
+          team_slug: person.tier,
           agent_name: person.name,
           metric_key: r.key,
           metric_value: r.value,
