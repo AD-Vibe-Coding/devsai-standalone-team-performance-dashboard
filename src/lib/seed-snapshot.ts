@@ -281,8 +281,8 @@ function wobbleKpi(key: string, value: number, i: number, n: number) {
 
 function volFactorsFor(grain: PeriodGrain) {
   return grain === "quarter"
-    ? [0.88, 0.91, 0.94, 0.97, 1]
-    : [0.82, 0.84, 0.86, 0.88, 0.9, 0.91, 0.93, 0.94, 0.95, 0.97, 0.98, 0.99, 1];
+    ? [0.86, 0.93, 0.89, 0.97, 1]
+    : [0.78, 0.84, 0.81, 0.9, 0.88, 0.94, 0.91, 0.97, 0.93, 1.02, 0.96, 0.99, 1];
 }
 
 function labelsFor(grain: PeriodGrain) {
