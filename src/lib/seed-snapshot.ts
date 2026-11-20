@@ -109,5 +109,3 @@ export async function seedSnapshotIfEmpty(
 function clampPct(v: number) {
   return Math.min(99.9, Math.max(70, Number(v.toFixed(1))));
 }
-
-void 0 as unknown as PGlite;

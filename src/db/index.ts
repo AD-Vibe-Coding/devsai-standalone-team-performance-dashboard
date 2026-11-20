@@ -2,6 +2,7 @@ import { PGlite } from "@electric-sql/pglite";
 import { drizzle } from "drizzle-orm/pglite";
 import { sql } from "drizzle-orm";
 import * as schema from "./schema";
+import { seedSnapshotIfEmpty } from "../lib/seed-snapshot";
 
 let client: PGlite | null = null;
 let dbInstance: ReturnType<typeof drizzle<typeof schema>> | null = null;
