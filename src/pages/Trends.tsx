@@ -130,7 +130,7 @@ export default function Trends() {
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">{v.label}</CardTitle>
               </CardHeader>
-              <CardContent className="h-72">
+              <CardContent className="h-80">
                 <TrendChart
                   data={data}
                   grain={grain}
@@ -159,7 +159,7 @@ export default function Trends() {
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">{k.label}</CardTitle>
               </CardHeader>
-              <CardContent className="h-72">
+              <CardContent className="h-80">
                 <TrendChart
                   data={data}
                   grain={grain}
@@ -170,75 +170,6 @@ export default function Trends() {
           );
         })}
       </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="font-display text-xl">Volume data</CardTitle>
-        </CardHeader>
-        <CardContent className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Period</TableHead>
-                {VOLUME_DEFS.map((v) => (
-                  <TableHead key={v.key} className="text-right">
-                    {v.short}
-                  </TableHead>
-                ))}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {series.map((p) => (
-                <TableRow key={p.label}>
-                  <TableCell className="font-medium">{p.label}</TableCell>
-                  {VOLUME_DEFS.map((v) => (
-                    <TableCell key={v.key} className="text-right tabular-nums">
-                      {p.volumes[v.key].toLocaleString("en-US")}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="font-display text-xl">SLA data</CardTitle>
-        </CardHeader>
-        <CardContent className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Period</TableHead>
-                {KPI_DEFS.filter((k) => k.showOnTeam).map((k) => (
-                  <TableHead key={k.key} className="text-right">
-                    {k.short}
-                  </TableHead>
-                ))}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {series.map((p) => (
-                <TableRow key={p.label}>
-                  <TableCell className="font-medium">{p.label}</TableCell>
-                  {KPI_DEFS.filter((k) => k.showOnTeam).map((k) => {
-                    const overallKey = k.overallKey ?? k.key;
-                    const overallDef = KPI_BY_KEY[overallKey];
-                    const val = p.kpis[overallKey] ?? p.kpis[k.key] ?? 0;
-                    return (
-                      <TableCell key={k.key} className="text-right tabular-nums">
-                        {formatKpi(val, overallDef.unit)}
-                      </TableCell>
-                    );
-                  })}
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
     </div>
   );
 }
