@@ -12,7 +12,7 @@ export { schema };
 export const dbReady = (async () => {
   // IndexedDB in the browser — a filesystem path calls Node path.resolve and throws
   // "o.resolve is not a function".
-  client = await PGlite.create("idb://team-performance");
+  client = await PGlite.create("idb://team-performance-v2");
   dbInstance = drizzle(client, { schema });
   const db = dbInstance;
   await db.execute(sql`

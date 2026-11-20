@@ -42,6 +42,40 @@ const SNAPSHOT: Record<string, Partial<Record<KpiKey, number>>> = {
   },
 };
 
+export function snapshotLeaderboards(): Record<string, { agent: string; team: string; value: number }[]> {
+  const boards: Record<string, { agent: string; team: string; value: number }[]> = {};
+  for (const person of STAFF) {
+    const base = SNAPSHOT[person.name];
+    if (!base) continue;
+    for (const [key, value] of Object.entries(base)) {
+      (boards[key] ??= []).push({ agent: person.name, team: person.team, value: value as number });
+    }
+  }
+  return boards;
+}
+
+export function snapshotOverview() {
+  const boards = snapshotLeaderboards();
+  const avg = (arr: number[]) => (arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 0);
+  const kpis = Object.fromEntries(
+    Object.entries(boards).map(([k, rows]) => [k, { value: avg(rows.map((r) => r.value)), n: rows.length }]),
+  );
+  const byTeam: Record<string, Record<string, number[]>> = {};
+  for (const [key, rows] of Object.entries(boards)) {
+    for (const r of rows) {
+      byTeam[r.team] ??= {};
+      (byTeam[r.team][key] ??= []).push(r.value);
+    }
+  }
+  const teams = Object.entries(byTeam).map(([slug, metrics]) => ({
+    slug,
+    metrics: Object.fromEntries(Object.entries(metrics).map(([k, vals]) => [k, avg(vals)])),
+    n: Object.values(metrics)[0]?.length ?? 0,
+  }));
+  const rowCount = Object.values(boards).reduce((n, rows) => n + rows.length, 0);
+  return { kpis, teams, rowCount };
+}
+
 export async function seedSnapshotIfEmpty(
   db: ReturnType<typeof drizzle<typeof schema>>,
 ) {

@@ -13,7 +13,7 @@ import {
 import { cn } from "@/lib/utils";
 
 const NAV = [
-  { to: "/", label: "Overview", icon: LayoutDashboard },
+  { to: "/", label: "Dashboard", icon: LayoutDashboard },
   { to: "/trends", label: "Trends", icon: BarChart3 },
   { to: "/import", label: "Import", icon: Upload },
   { to: "/raw", label: "Raw data", icon: Table2 },

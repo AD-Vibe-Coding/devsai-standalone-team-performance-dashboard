@@ -72,6 +72,7 @@ export async function loadLeaderboards(team: string, from: string, to: string) {
       (boards[key] ??= []).push({ agent, team: info.team, value: avg(vals) });
     }
   }
+  if (rows.length === 0) return snapshotLeaderboards();
   return boards;
 }
 
