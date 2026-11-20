@@ -111,7 +111,7 @@ function TrendArea({
                   textAnchor="middle"
                   fill="#1b2430"
                   fontSize={10}
-                  fontVariantNumeric="tabular-nums"
+                  style={{ fontVariantNumeric: "tabular-nums" }}
                 >
                   {formatValue(value)}
                 </text>
