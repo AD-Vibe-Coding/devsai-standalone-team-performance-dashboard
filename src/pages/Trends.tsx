@@ -1,6 +1,7 @@
 import { useState } from "react";
 import {
   CartesianGrid,
+  LabelList,
   Line,
   LineChart,
   ResponsiveContainer,
@@ -40,7 +41,7 @@ function TrendChart({
 
   return (
     <ResponsiveContainer width="100%" height="100%">
-      <LineChart data={data} margin={{ top: 12, right: 28, left: 4, bottom: 28 }}>
+      <LineChart data={data} margin={{ top: 22, right: 36, left: 4, bottom: 28 }}>
         <CartesianGrid strokeDasharray="3 3" stroke="#d5dde5" />
         <XAxis
           dataKey="label"
@@ -72,7 +73,15 @@ function TrendChart({
           dot={{ r: 3, fill: STROKE, strokeWidth: 0 }}
           activeDot={{ r: 5 }}
           isAnimationActive={false}
-        />
+        >
+          <LabelList
+            dataKey="value"
+            position="top"
+            offset={8}
+            formatter={(val: number) => formatValue(val)}
+            style={{ fontSize: 10, fill: "#1b2430", fontVariantNumeric: "tabular-nums" }}
+          />
+        </Line>
       </LineChart>
     </ResponsiveContainer>
   );
