@@ -6,6 +6,7 @@ import {
   slaLabel,
   slaMet,
 } from "@/lib/kpis";
+import { VOLUME_DEFS } from "@/lib/volumes";
 import { tierName } from "@/lib/roster";
 import {
   snapshotLeaderboards,
@@ -33,12 +34,35 @@ export default function Overview() {
           <p className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">NOC</p>
           <h1 className="font-display mt-1 text-3xl md:text-4xl">Overall team performance</h1>
           <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-            Floor-wide SLA for NOC, then a leaderboard for each metric — best to last. Snapshot
-            numbers for Tier 1–3.
+            Floor-wide volumes and SLA for NOC, then a leaderboard for each metric — best to last.
+            Snapshot numbers for Tier 1–3.
           </p>
         </div>
       </BlurFade>
 
+      <div>
+        <h2 className="font-display text-2xl">Volumes</h2>
+        <p className="mt-1 text-sm text-muted-foreground">Totals across NOC for this snapshot window.</p>
+      </div>
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {VOLUME_DEFS.map((v) => (
+          <Card key={v.key}>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">{v.label}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="font-display text-3xl tabular-nums">
+                <NumberTicker value={data.volumes[v.key]} />
+              </p>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      <div>
+        <h2 className="font-display text-2xl">SLA</h2>
+        <p className="mt-1 text-sm text-muted-foreground">Floor-wide rates against published targets.</p>
+      </div>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {KPI_DEFS.filter((k) => k.showOnTeam).map((k) => {
           const overallKey = k.overallKey ?? k.key;
@@ -85,6 +109,11 @@ export default function Overview() {
             <TableHeader>
               <TableRow>
                 <TableHead>Tier</TableHead>
+                {VOLUME_DEFS.map((v) => (
+                  <TableHead key={v.key} className="text-right">
+                    {v.short}
+                  </TableHead>
+                ))}
                 {TEAM_KPI_DEFS.map((k) => (
                   <TableHead key={k.key} className="text-right">
                     {k.short}
@@ -96,13 +125,18 @@ export default function Overview() {
               {data.teams.map((t) => (
                 <TableRow key={t.slug}>
                   <TableCell className="font-medium">{tierName(t.slug)}</TableCell>
+                  {VOLUME_DEFS.map((v) => (
+                    <TableCell key={v.key} className="text-right tabular-nums">
+                      {t.volumes[v.key].toLocaleString("en-US")}
+                    </TableCell>
+                  ))}
                   {TEAM_KPI_DEFS.map((k) => {
                     const overallKey = k.overallKey ?? k.key;
                     const overallDef = KPI_BY_KEY[overallKey];
-                    const v = t.metrics[overallKey] ?? t.metrics[k.key] ?? 0;
+                    const val = t.metrics[overallKey] ?? t.metrics[k.key] ?? 0;
                     return (
                       <TableCell key={k.key} className="text-right tabular-nums">
-                        {formatKpi(v, overallDef.unit)}
+                        {formatKpi(val, overallDef.unit)}
                       </TableCell>
                     );
                   })}
