@@ -189,3 +189,6 @@
     @apply bg-background text-foreground;
   }
 }
+@utility grid-cols-13 {
+  grid-template-columns: repeat(13, minmax(0, 1fr));
+}
