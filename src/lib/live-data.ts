@@ -49,7 +49,7 @@ function mergeSlices(slices: MonthSlice[]): LiveOverview {
       volumes[k] += s.volumes[k] ?? 0;
     }
     for (const [k, v] of Object.entries(s.kpis)) {
-      const w = s.used || 1;
+      const w = k === "avg_ack_seconds" ? Math.max(1, s.used) : s.used || 1;
       kpiSum[k] = (kpiSum[k] ?? 0) + (v as number) * w;
       kpiN[k] = (kpiN[k] ?? 0) + w;
     }

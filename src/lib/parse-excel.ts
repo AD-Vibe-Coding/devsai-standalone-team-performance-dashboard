@@ -150,8 +150,12 @@ function cell(row: Record<string, unknown>, ...names: string[]) {
   return "";
 }
 
-function toSeconds(raw: string): number | null {
-  const t = raw.trim();
+function toSeconds(raw: unknown): number | null {
+  if (raw == null || raw === "") return null;
+  if (raw instanceof Date && !Number.isNaN(raw.getTime())) {
+    return raw.getUTCHours() * 3600 + raw.getUTCMinutes() * 60 + raw.getUTCSeconds();
+  }
+  const t = String(raw).trim();
   if (!t) return null;
   if (/^\d{1,2}:\d{2}:\d{2}/.test(t)) {
     const [h, m, s] = t.split(":").map(Number);
@@ -164,6 +168,7 @@ function toSeconds(raw: string): number | null {
   const n = Number(t.replace(/,/g, ""));
   if (!Number.isFinite(n)) return null;
   if (n > 0 && n < 1) return n * 86400;
+  if (n >= 1 && n <= 24) return n * 3600;
   if (n > 24 && n < 86400) return n;
   return n * 60;
 }
