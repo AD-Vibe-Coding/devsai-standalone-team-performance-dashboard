@@ -203,7 +203,7 @@ export default function Trends() {
         <BlurFade>
           <div>
             <p className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">NOC</p>
-            <h1 className="font-display mt-1 text-3xl md:text-4xl">Trends</h1>
+            <h1 className="font-display mt-1 text-3xl md:text-4xl">Team Trends</h1>
             <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
               Charts use only uploaded Excel rows, grouped by column B (month).
             </p>
@@ -227,7 +227,7 @@ export default function Trends() {
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">NOC</p>
-            <h1 className="font-display mt-1 text-3xl md:text-4xl">Trends</h1>
+            <h1 className="font-display mt-1 text-3xl md:text-4xl">Team Trends</h1>
             <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
               Last {windowLabel}. Filled area shows the path of each metric; Y-axis zooms to the range so dips and rises read clearly.
             </p>

@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 
 const NAV = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/trends", label: "Trends", icon: TrendingUp },
+  { to: "/trends", label: "Team Trends", icon: TrendingUp },
   { to: "/upload", label: "Upload", icon: Upload },
 ];
 
