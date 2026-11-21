@@ -85,9 +85,19 @@ export default function Insights() {
       {err ? <p className="text-sm text-destructive">{err}</p> : null}
 
       {briefing ? (
-        <Card>
-          <CardContent className="py-6">
-            <div className="whitespace-pre-wrap text-sm leading-relaxed">{briefing}</div>
+        <Card className="overflow-hidden">
+          <CardContent className="px-6 py-8 sm:px-8">
+            <article className="prose prose-neutral dark:prose-invert max-w-none prose-p:my-3 prose-p:leading-7 prose-p:text-[15px] prose-strong:font-semibold prose-strong:text-foreground prose-headings:font-display prose-headings:tracking-tight prose-h2:mt-6 prose-h2:mb-2 prose-h2:text-lg prose-ul:my-3 prose-li:my-1">
+              <ReactMarkdown
+                components={{
+                  strong: ({ children }: { children?: ReactNode }) => (
+                    <strong className="font-semibold text-foreground">{children}</strong>
+                  ),
+                }}
+              >
+                {cleanMarkdown(briefing)}
+              </ReactMarkdown>
+            </article>
           </CardContent>
         </Card>
       ) : null}

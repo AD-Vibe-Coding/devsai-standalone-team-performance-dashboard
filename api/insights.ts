@@ -9,7 +9,9 @@ Rules:
 - Mention the top carriers that moved.
 - If mix counts are all zero, say ticket type/carrier text was not recognized and do not pretend mix is known.
 - If there is no previous period, say so and summarize the current month only.
-- 3–6 short paragraphs. No markdown tables. Tone: calm, specific, board-ready.`;
+- 3–6 short paragraphs. Use markdown: **bold** for key figures and names, blank lines between paragraphs.
+- Do not wrap entire sentences in asterisks. Do not use tables.
+- Tone: calm, specific, board-ready.`;
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
