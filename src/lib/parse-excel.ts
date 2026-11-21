@@ -553,6 +553,11 @@ export function parseWorkbook(kind: UploadKind, filename: string, buffer: ArrayB
     const named = headerIndex(headerRow, "hour_opened", "hour opened", "hour of day");
     return named >= 0 ? named : 49;
   })();
+  // Column BJ (A=0 … BJ=61): time_interval_buc — "Under 15 Minutes". Blanks excluded.
+  const intervalCol = (() => {
+    const named = headerIndex(headerRow, "time_interval_buc", "time interval buc", "time_interval");
+    return named >= 0 ? named : 61;
+  })();
 
   const dataRows = matrix.slice(1);
 
