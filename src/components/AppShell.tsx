@@ -1,5 +1,5 @@
 import { NavLink, Outlet } from "react-router-dom";
-import { LayoutDashboard, Sparkles, TrendingUp, Upload, UserRound } from "lucide-react";
+import { LayoutDashboard, PenLine, Sparkles, TrendingUp, Upload, UserRound } from "lucide-react";
 import { ThemeToggle } from "./ThemeToggle";
 import { cn } from "@/lib/utils";
 

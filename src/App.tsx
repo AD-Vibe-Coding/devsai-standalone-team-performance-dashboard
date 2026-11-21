@@ -4,6 +4,7 @@ import Overview from "@/pages/Overview";
 import Trends from "@/pages/Trends";
 import Individual from "@/pages/Individual";
 import Insights from "@/pages/Insights";
+import Generate from "@/pages/Generate";
 import Upload from "@/pages/Upload";
 import { SnapshotProvider } from "@/lib/snapshot-store";
 
