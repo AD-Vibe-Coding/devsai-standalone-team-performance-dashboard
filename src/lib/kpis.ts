@@ -101,8 +101,10 @@ export const KPI_DEFS: KpiDef[] = [
     short: "Closed <24h",
     unit: "percent",
     higherIsBetter: true,
-    description: "Share of tickets closed within 24 hours of being received.",
-    formula: "Tickets closed in under 24 hours ÷ tickets closed × 100. Member and team SLA: more than 90%.",
+    description:
+      "Share of tickets closed in under 24 hours (Excel column BD). Blank BD cells are excluded.",
+    formula:
+      "Tickets with BD < 24 hours ÷ tickets with a non-blank BD × 100, for the selected month. Target: more than 90%.",
     memberSla: { kind: "at_least", value: 90, label: "more than 90%" },
     overallSla: { kind: "at_least", value: 90, label: "more than 90%" },
     showOnTeam: true,

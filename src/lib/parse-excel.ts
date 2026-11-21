@@ -308,6 +308,17 @@ export function parseWorkbook(kind: UploadKind, filename: string, buffer: ArrayB
     const named = headerIndex(headerRow, "tickets acked by", "ticket acked by", "acked by");
     return named >= 0 ? named : 40;
   })();
+  // Column BD (A=0 … BD=55): hours to close. Under 24 hours = on time. Blanks excluded.
+  const closedCol = (() => {
+    const named = headerIndex(
+      headerRow,
+      "closed under 24",
+      "tickets closed under 24",
+      "time to close",
+      "closed in 24",
+    );
+    return named >= 0 ? named : 55;
+  })();
 
   const dataRows = matrix.slice(1);
 
