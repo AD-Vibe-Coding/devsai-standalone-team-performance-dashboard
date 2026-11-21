@@ -19,7 +19,8 @@ const ZONES: {
     title: "Trouble tickets",
     hint: "One row per ticket.",
     icon: Ticket,
-    columns: "Column B = month · Column AN = Average acknowledgement time",
+    columns:
+      "Column B = month · Column AN = Ticket Acknowledge Time · Column AG = time to open with carrier (under 15 min, blanks excluded)",
   },
   {
     kind: "mobility",

@@ -51,10 +51,12 @@ export const KPI_DEFS: KpiDef[] = [
     short: "Carrier open",
     unit: "percent",
     higherIsBetter: true,
-    description: "Share of carrier tickets opened inside the published window.",
-    formula: "On-time carrier opens ÷ carrier tickets × 100. Member and team SLA: more than 90%.",
-    memberSla: { kind: "at_least", value: 90, label: "more than 90%" },
-    overallSla: { kind: "at_least", value: 90, label: "more than 90%" },
+    description:
+      "Share of tickets opened with the carrier in under 15 minutes (Excel column AG). Blank AG cells are excluded.",
+    formula:
+      "Tickets with AG < 15 minutes ÷ tickets with a non-blank AG × 100, for the selected month. Target: more than 90%.",
+    memberSla: { kind: "at_least", value: 90, label: "more than 90% opened under 15 minutes" },
+    overallSla: { kind: "at_least", value: 90, label: "more than 90% opened under 15 minutes" },
     showOnTeam: true,
   },
   {

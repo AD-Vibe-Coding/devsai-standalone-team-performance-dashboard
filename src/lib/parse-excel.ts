@@ -306,6 +306,16 @@ export function parseWorkbook(kind: UploadKind, filename: string, buffer: ArrayB
     const named = headerIndex(headerRow, "ticket acknowledge time", "acknowledge time", "acked time");
     return named >= 0 ? named : 39;
   })();
+  // Column AG (A=0 … AG=32): time to open ticket with the carrier, in minutes.
+  const carrierCol = (() => {
+    const named = headerIndex(
+      headerRow,
+      "time to open ticket with the carrier",
+      "carrier open",
+      "open ticket with the carrier",
+    );
+    return named >= 0 ? named : 32;
+  })();
 
   const dataRows = matrix.slice(1);
 
@@ -325,11 +335,14 @@ export function parseWorkbook(kind: UploadKind, filename: string, buffer: ArrayB
     if (kind === "tickets") {
       const agent = cell(row, "acked by", "agent", "owner", "assignee");
       const ackSec = ackMinutesToSeconds(grid[ackCol]);
-      const carrierRaw = cell(row, "time to open ticket with the carrier", "carrier open", "carrier sla");
+      const carrierCell = grid[carrierCol];
+      const carrierBlank =
+        carrierCell == null || String(carrierCell).trim() === "";
+      const carrierSec = carrierBlank ? null : ackMinutesToSeconds(carrierCell);
       const carrierName = cell(row, "carrier", "vendor");
       const closedRaw = cell(row, "closed under 24", "closed in 24", "mttr hours", "resolve time");
       const mttrSec = toSeconds(cell(row, "mttr", "restore time", "time to restore"));
-      if (!agent && ackSec == null && !carrierRaw && !carrierName && mttrSec == null) {
+      if (!agent && ackSec == null && carrierSec == null && !carrierName && mttrSec == null) {
         if (i < 5) errors.push(`Row ${i + 2}: no ticket fields recognized`);
         return;
       }
@@ -344,23 +357,13 @@ export function parseWorkbook(kind: UploadKind, filename: string, buffer: ArrayB
           total.ackUnder5 += 1;
         }
       }
-      const onTime = yesNo(carrierRaw);
-      if (onTime != null) {
+      // AG: minutes to open with carrier. Blank cells excluded. Under 15 min = on time.
+      if (carrierSec != null) {
         acc.carrierN += 1;
         total.carrierN += 1;
-        if (onTime) {
+        if (carrierSec < 15 * 60) {
           acc.carrierOk += 1;
           total.carrierOk += 1;
-        }
-      } else {
-        const secs = toSeconds(carrierRaw);
-        if (secs != null) {
-          acc.carrierN += 1;
-          total.carrierN += 1;
-          if (secs > 0) {
-            acc.carrierOk += 1;
-            total.carrierOk += 1;
-          }
         }
       }
       if (carrierName) {
