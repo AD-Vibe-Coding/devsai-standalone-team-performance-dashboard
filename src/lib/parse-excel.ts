@@ -277,6 +277,20 @@ function finish(kind: UploadKind, acc: Acc): { volumes: MonthSlice["volumes"]; k
   };
 }
 
+function headerIndex(headers: string[], ...names: string[]): number {
+  for (const name of names) {
+    const want = name.toLowerCase().replace(/[^a-z0-9]/g, "");
+    const i = headers.findIndex((h) => h.toLowerCase().replace(/[^a-z0-9]/g, "") === want);
+    if (i >= 0) return i;
+  }
+  for (const name of names) {
+    const want = name.toLowerCase();
+    const i = headers.findIndex((h) => h.toLowerCase().includes(want));
+    if (i >= 0) return i;
+  }
+  return -1;
+}
+
 export function parseWorkbook(kind: UploadKind, filename: string, buffer: ArrayBuffer): UploadResult {
   const wb = XLSX.read(buffer, { type: "array", cellDates: true });
   const sheet = wb.Sheets[wb.SheetNames[0]];
@@ -288,8 +302,15 @@ export function parseWorkbook(kind: UploadKind, filename: string, buffer: ArrayB
   const total = emptyAcc();
   let used = 0;
 
-  rows.forEach((row, i) => {
-    const monthRaw = colB(row, headerRow.length ? headerRow : Object.keys(row));
+  const ackCol = (() => {
+    const named = headerIndex(headerRow, "ticket acknowledge time", "acknowledge time", "acked time");
+    return named >= 0 ? named : 39;
+  })();
+
+  const dataRows = matrix.slice(1);
+
+  dataRows.forEach((grid, i) => {
+    const monthRaw = grid[1];
     const parsedMonth = parseMonthKey(monthRaw);
     if (!parsedMonth) {
       if (i < 8) errors.push(`Row ${i + 2}: column B is not a recognizable month (${String(monthRaw)})`);
@@ -299,9 +320,11 @@ export function parseWorkbook(kind: UploadKind, filename: string, buffer: ArrayB
     const acc = byMonth.get(parsedMonth.key)?.acc ?? emptyAcc();
     if (!byMonth.has(parsedMonth.key)) byMonth.set(parsedMonth.key, { label: parsedMonth.label, acc });
 
+    const row = rows[i] ?? {};
+
     if (kind === "tickets") {
       const agent = cell(row, "acked by", "agent", "owner", "assignee");
-      const ackSec = toSeconds(cell(row, "acked time", "ack time", "acknowledgement"));
+      const ackSec = ackMinutesToSeconds(grid[ackCol]);
       const carrierRaw = cell(row, "time to open ticket with the carrier", "carrier open", "carrier sla");
       const carrierName = cell(row, "carrier", "vendor");
       const closedRaw = cell(row, "closed under 24", "closed in 24", "mttr hours", "resolve time");
