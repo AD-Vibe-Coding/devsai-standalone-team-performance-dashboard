@@ -29,6 +29,8 @@ export type AutomationSlice = {
   ackN: number;
   carrierSum: number;
   carrierN: number;
+  carrierOk: number;
+  carrierIntervalN: number;
   closed24: number;
   closedN: number;
   mttrSum: number;
@@ -587,6 +589,7 @@ export function parseWorkbook(kind: UploadKind, filename: string, buffer: ArrayB
       const isOutage = /\boutage\b|\bdown\b|\bservice affect/.test(typeBlob);
       const isComcast = /\bcomcast\b|\bxfinity\b/.test(typeBlob);
       const closedRaw = String(grid[closedCol] ?? "").trim();
+      const intervalRaw = String(grid[intervalCol] ?? "").trim();
       const mttrSec = toSeconds(cell(row, "mttr", "restore time", "time to restore"));
       if (!agent && ackSec == null && carrierSec == null && !carrierName && mttrSec == null) {
         if (i < 5) errors.push(`Row ${i + 2}: no ticket fields recognized`);
