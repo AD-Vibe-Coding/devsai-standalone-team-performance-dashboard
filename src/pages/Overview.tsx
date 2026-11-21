@@ -146,6 +146,140 @@ export default function Overview() {
         ))}
       </div>
 
+      {(() => {
+        const auto = view.automation;
+        const priorAuto = prior?.automation;
+        const dash = (v: number | null | undefined) =>
+          v == null || !Number.isFinite(v) ? (
+            <span className="text-lg text-muted-foreground">—</span>
+          ) : null;
+        return (
+          <>
+            <div>
+              <h2 className="font-display text-2xl">Automation</h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Tickets where Tickets Acked By is Automation. Share of volume, ack time, carrier-open time, 24-hour close, and MTTR
+                {previousLabel ? ` vs ${previousLabel}` : ""}.
+              </p>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">
+                    % Automation handled
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {dash(auto.sharePct) ?? (
+                    <p className="font-display flex items-baseline text-3xl tabular-nums">
+                      <NumberTicker value={Number((auto.sharePct ?? 0).toFixed(1))} />%
+                      {priorAuto?.sharePct != null && auto.sharePct != null ? (
+                        <Delta
+                          current={auto.sharePct}
+                          previous={priorAuto.sharePct}
+                          higherIsBetter
+                          unit="percent"
+                        />
+                      ) : null}
+                    </p>
+                  )}
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {auto.tickets.toLocaleString()} of {view.volumes.tickets_received.toLocaleString()} tickets
+                  </p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">
+                    Average acknowledgement time
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {dash(auto.avgAckSeconds) ?? (
+                    <p className="font-display flex items-baseline text-3xl tabular-nums">
+                      {formatKpi(auto.avgAckSeconds ?? 0, "seconds")}
+                      {priorAuto?.avgAckSeconds != null && auto.avgAckSeconds != null ? (
+                        <Delta
+                          current={auto.avgAckSeconds}
+                          previous={priorAuto.avgAckSeconds}
+                          higherIsBetter={false}
+                          unit="seconds"
+                        />
+                      ) : null}
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">
+                    Time to open with the carrier
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {dash(auto.avgCarrierOpenMinutes) ?? (
+                    <p className="font-display flex items-baseline text-3xl tabular-nums">
+                      {Number((auto.avgCarrierOpenMinutes ?? 0).toFixed(1))}
+                      <span className="ml-1 text-base font-sans text-muted-foreground">min</span>
+                      {priorAuto?.avgCarrierOpenMinutes != null && auto.avgCarrierOpenMinutes != null ? (
+                        <Delta
+                          current={auto.avgCarrierOpenMinutes}
+                          previous={priorAuto.avgCarrierOpenMinutes}
+                          higherIsBetter={false}
+                          unit="number"
+                        />
+                      ) : null}
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">
+                    % closed under 24 hours
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {dash(auto.closedUnder24Pct) ?? (
+                    <p className="font-display flex items-baseline text-3xl tabular-nums">
+                      <NumberTicker value={Number((auto.closedUnder24Pct ?? 0).toFixed(1))} />%
+                      {priorAuto?.closedUnder24Pct != null && auto.closedUnder24Pct != null ? (
+                        <Delta
+                          current={auto.closedUnder24Pct}
+                          previous={priorAuto.closedUnder24Pct}
+                          higherIsBetter
+                          unit="percent"
+                        />
+                      ) : null}
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">Avg MTTR</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {dash(auto.avgMttrSeconds) ?? (
+                    <p className="font-display flex items-baseline text-3xl tabular-nums">
+                      {formatKpi(auto.avgMttrSeconds ?? 0, "seconds")}
+                      {priorAuto?.avgMttrSeconds != null && auto.avgMttrSeconds != null ? (
+                        <Delta
+                          current={auto.avgMttrSeconds}
+                          previous={priorAuto.avgMttrSeconds}
+                          higherIsBetter={false}
+                          unit="seconds"
+                        />
+                      ) : null}
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          </>
+        );
+      })()}
+
       <div>
         <h2 className="font-display text-2xl">SLA</h2>
         <p className="mt-1 text-sm text-muted-foreground">

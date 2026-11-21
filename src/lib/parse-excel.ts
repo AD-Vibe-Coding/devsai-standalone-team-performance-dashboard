@@ -19,7 +19,20 @@ export type MonthSlice = {
     comcastOutage: number;
   };
   patterns?: MonthPatterns;
+  automation?: AutomationSlice;
   used: number;
+};
+
+export type AutomationSlice = {
+  tickets: number;
+  ackSum: number;
+  ackN: number;
+  carrierSum: number;
+  carrierN: number;
+  closed24: number;
+  closedN: number;
+  mttrSum: number;
+  mttrN: number;
 };
 
 export type NameCount = { name: string; tickets: number };
@@ -244,6 +257,12 @@ type Acc = {
   carrierOpenByCarrier: Map<string, { sum: number; n: number }>;
   days: Map<string, number>;
   hours: Map<string, number>;
+  autoTickets: number;
+  autoAck: number[];
+  autoCarrier: number[];
+  autoClosed24: number;
+  autoClosedN: number;
+  autoMttr: number[];
 };
 
 function emptyAcc(): Acc {
@@ -276,7 +295,17 @@ function emptyAcc(): Acc {
     carrierOpenByCarrier: new Map(),
     days: new Map(),
     hours: new Map(),
+    autoTickets: 0,
+    autoAck: [],
+    autoCarrier: [],
+    autoClosed24: 0,
+    autoClosedN: 0,
+    autoMttr: [],
   };
+}
+
+function isAutomationAck(agent: string): boolean {
+  return /^\s*automation\s*$/i.test(agent.trim());
 }
 
 function categorizeIssueType(raw: string): string {
@@ -352,6 +381,7 @@ function finish(kind: UploadKind, acc: Acc): {
   carriers: MonthSlice["carriers"];
   mix: MonthSlice["mix"];
   patterns: MonthSlice["patterns"];
+  automation: MonthSlice["automation"];
 } {
   const volumes: MonthSlice["volumes"] = {};
   const kpis: MonthSlice["kpis"] = {};
@@ -404,6 +434,20 @@ function finish(kind: UploadKind, acc: Acc): {
               .slice(0, 10),
             days: topMap(acc.days, 8),
             hours: topMap(acc.hours, 24),
+          }
+        : undefined,
+    automation:
+      kind === "tickets"
+        ? {
+            tickets: acc.autoTickets,
+            ackSum: acc.autoAck.reduce((a, b) => a + b, 0),
+            ackN: acc.autoAck.length,
+            carrierSum: acc.autoCarrier.reduce((a, b) => a + b, 0),
+            carrierN: acc.autoCarrier.length,
+            closed24: acc.autoClosed24,
+            closedN: acc.autoClosedN,
+            mttrSum: acc.autoMttr.reduce((a, b) => a + b, 0),
+            mttrN: acc.autoMttr.length,
           }
         : undefined,
   };
@@ -593,7 +637,7 @@ export function parseWorkbook(kind: UploadKind, filename: string, buffer: ArrayB
       const carrierMin = carrierSec != null ? carrierSec / 60 : null;
 
       const applyPatterns = (a: Acc) => {
-        if (issueType) bumpMap(a.issueTypes, issueType);
+        if (issueType) bumpMap(a.issueTypes, categorizeIssueType(issueType));
         if (resolution) bumpMap(a.resolutions, resolution);
         if (openedBy) {
           if (/tech\s*support/i.test(openedBy)) a.techSupport += 1;
@@ -630,6 +674,22 @@ export function parseWorkbook(kind: UploadKind, filename: string, buffer: ArrayB
         acc.mttr.push(mttrSec);
         total.mttr.push(mttrSec);
         mAcc?.mttr.push(mttrSec);
+      }
+
+      if (isAutomationAck(agent)) {
+        const bumpAuto = (a: Acc) => {
+          a.autoTickets += 1;
+          if (ackSec != null) a.autoAck.push(ackSec);
+          if (carrierSec != null) a.autoCarrier.push(carrierSec);
+          if (closedRaw) {
+            a.autoClosedN += 1;
+            if (closedRaw.toLowerCase().includes("less than 24")) a.autoClosed24 += 1;
+          }
+          if (mttrSec != null) a.autoMttr.push(mttrSec);
+        };
+        bumpAuto(acc);
+        bumpAuto(total);
+        if (mAcc) bumpAuto(mAcc);
       }
     }
 

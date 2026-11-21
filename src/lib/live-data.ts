@@ -18,10 +18,21 @@ export type LiveMix = {
   comcastMaintenance: number;
   comcastOutage: number;
 };
+export type LiveAutomation = {
+  tickets: number;
+  sharePct: number | null;
+  avgAckSeconds: number | null;
+  avgCarrierOpenMinutes: number | null;
+  carrierOpenSlaPct: number | null;
+  closedUnder24Pct: number | null;
+  avgMttrSeconds: number | null;
+};
+
 export type LiveOverview = {
   volumes: Record<VolumeKey, number>;
   kpis: Record<string, LiveKpi>;
   mix: LiveMix;
+  automation: LiveAutomation;
 };
 
 const VOLUME_KEYS: VolumeKey[] = [
@@ -64,6 +75,15 @@ function mergeSlices(slices: MonthSlice[]): LiveOverview {
   const mix = emptyMix();
   const kpiSum: Record<string, number> = {};
   const kpiN: Record<string, number> = {};
+  let autoTickets = 0;
+  let autoAckSum = 0;
+  let autoAckN = 0;
+  let autoCarrierSum = 0;
+  let autoCarrierN = 0;
+  let autoClosed24 = 0;
+  let autoClosedN = 0;
+  let autoMttrSum = 0;
+  let autoMttrN = 0;
   for (const s of slices) {
     for (const k of VOLUME_KEYS) {
       volumes[k] += s.volumes[k] ?? 0;
@@ -80,12 +100,34 @@ function mergeSlices(slices: MonthSlice[]): LiveOverview {
       kpiSum[k] = (kpiSum[k] ?? 0) + (v as number) * w;
       kpiN[k] = (kpiN[k] ?? 0) + w;
     }
+    const a = s.automation;
+    if (a) {
+      autoTickets += a.tickets;
+      autoAckSum += a.ackSum;
+      autoAckN += a.ackN;
+      autoCarrierSum += a.carrierSum;
+      autoCarrierN += a.carrierN;
+      autoClosed24 += a.closed24;
+      autoClosedN += a.closedN;
+      autoMttrSum += a.mttrSum;
+      autoMttrN += a.mttrN;
+    }
   }
   const kpis: Record<string, LiveKpi> = {};
   for (const [k, v] of Object.entries(kpiSum)) {
     kpis[k] = { value: v / (kpiN[k] || 1), n: kpiN[k] || 1 };
   }
-  return { volumes, kpis, mix };
+  const ticketTotal = volumes.tickets_received;
+  const automation: LiveAutomation = {
+    tickets: autoTickets,
+    sharePct: ticketTotal ? (autoTickets / ticketTotal) * 100 : null,
+    avgAckSeconds: autoAckN ? autoAckSum / autoAckN : null,
+    avgCarrierOpenMinutes: autoCarrierN ? autoCarrierSum / autoCarrierN / 60 : null,
+    carrierOpenSlaPct: null,
+    closedUnder24Pct: autoClosedN ? (autoClosed24 / autoClosedN) * 100 : null,
+    avgMttrSeconds: autoMttrN ? autoMttrSum / autoMttrN : null,
+  };
+  return { volumes, kpis, mix, automation };
 }
 
 export function liveAt(uploads: UploadResult[], grain: PeriodGrain, index: number) {
