@@ -119,4 +119,29 @@ export function liveMemberTrends(uploads: UploadResult[], grain: PeriodGrain, me
   });
 }
 
+export type LeaderboardRow = {
+  name: string;
+  tickets: number;
+  overview: LiveOverview;
+};
+
+/** Rank members by tickets in the selected period (Acked By). */
+export function liveLeaderboard(
+  uploads: UploadResult[],
+  grain: PeriodGrain,
+  index: number,
+  names: readonly string[],
+): LeaderboardRow[] {
+  const labels = periodLabelsLive(grain);
+  const i = Math.max(0, Math.min(index, labels.length - 1));
+  const keys = keysForLabel(grain, labels[i]);
+  return names
+    .map((name) => {
+      const overview = mergeSlices(memberSlicesFor(uploads, name, keys));
+      return { name, tickets: overview.volumes.tickets_received, overview };
+    })
+    .filter((r) => r.tickets > 0)
+    .sort((a, b) => b.tickets - a.tickets);
+}
+
 export type { KpiKey };

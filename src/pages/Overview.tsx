@@ -10,7 +10,8 @@ import {
 import { VOLUME_DEFS } from "@/lib/volumes";
 import { type PeriodGrain } from "@/lib/seed-snapshot";
 import { useSnapshotUploads } from "@/lib/snapshot-store";
-import { hasLiveData, liveAt, periodLabelsLive } from "@/lib/live-data";
+import { hasLiveData, liveAt, liveLeaderboard, periodLabelsLive } from "@/lib/live-data";
+import { TEAM_MEMBERS } from "@/lib/team-members";
 import { Delta } from "@/components/Delta";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -208,6 +209,62 @@ export default function Overview() {
           );
         })}
       </div>
+
+      <div>
+        <h2 className="font-display text-2xl">Leaderboard</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Ranked by tickets acknowledged (column AO) in {label}. Blank Acked By rows are not listed.
+        </p>
+      </div>
+      {board.length === 0 ? (
+        <Card>
+          <CardContent className="py-8 text-sm text-muted-foreground">
+            No names matched Tickets Acked By for this period. Re-upload the tickets file after the latest parser change.
+          </CardContent>
+        </Card>
+      ) : (
+        <Card>
+          <CardContent className="overflow-x-auto p-0">
+            <table className="w-full text-left text-sm">
+              <thead className="border-b border-border bg-secondary/50 text-[11px] uppercase tracking-wider text-muted-foreground">
+                <tr>
+                  <th className="px-4 py-3 font-medium">#</th>
+                  <th className="px-4 py-3 font-medium">Member</th>
+                  <th className="px-4 py-3 font-medium tabular-nums">Tickets</th>
+                  <th className="px-4 py-3 font-medium tabular-nums">Avg ack</th>
+                  <th className="px-4 py-3 font-medium tabular-nums">Carrier open</th>
+                  <th className="px-4 py-3 font-medium tabular-nums">Closed &lt;24h</th>
+                </tr>
+              </thead>
+              <tbody>
+                {board.map((row, i) => {
+                  const k = row.overview.kpis;
+                  return (
+                    <tr key={row.name} className="border-b border-border last:border-0">
+                      <td className="px-4 py-3 tabular-nums text-muted-foreground">{i + 1}</td>
+                      <td className="px-4 py-3 font-medium">{row.name}</td>
+                      <td className="px-4 py-3 tabular-nums">{row.tickets.toLocaleString("en-US")}</td>
+                      <td className="px-4 py-3 tabular-nums">
+                        {k.avg_ack_seconds ? formatKpi(k.avg_ack_seconds.value, "seconds") : "—"}
+                      </td>
+                      <td className="px-4 py-3 tabular-nums">
+                        {k.carrier_open_sla_pct
+                          ? `${k.carrier_open_sla_pct.value.toFixed(1)}%`
+                          : "—"}
+                      </td>
+                      <td className="px-4 py-3 tabular-nums">
+                        {k.closed_under_24h_pct
+                          ? `${k.closed_under_24h_pct.value.toFixed(1)}%`
+                          : "—"}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
