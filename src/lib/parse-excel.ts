@@ -616,37 +616,41 @@ export function parseWorkbook(kind: UploadKind, filename: string, buffer: ArrayB
         mAcc = slot.acc;
         mAcc.used += 1;
       }
-      if (ackSec != null) {
-        acc.ack.push(ackSec);
-        total.ack.push(ackSec);
-        mAcc?.ack.push(ackSec);
-        if (ackSec < 300) {
-          acc.ackUnder5 += 1;
-          total.ackUnder5 += 1;
-          if (mAcc) mAcc.ackUnder5 += 1;
+      const automationAck = isAutomationAck(agent);
+      // Team SLAs exclude Automation-acked tickets (those feed the Automation cards only).
+      if (!automationAck) {
+        if (ackSec != null) {
+          acc.ack.push(ackSec);
+          total.ack.push(ackSec);
+          mAcc?.ack.push(ackSec);
+          if (ackSec < 300) {
+            acc.ackUnder5 += 1;
+            total.ackUnder5 += 1;
+            if (mAcc) mAcc.ackUnder5 += 1;
+          }
         }
-      }
-      // AG: minutes to open with carrier (averages). Blank cells excluded.
-      if (carrierSec != null) {
-        acc.carrierN += 1;
-        total.carrierN += 1;
-        if (mAcc) mAcc.carrierN += 1;
-        if (carrierSec < 15 * 60) {
-          acc.carrierOk += 1;
-          total.carrierOk += 1;
-          if (mAcc) mAcc.carrierOk += 1;
+        // AG: minutes to open with carrier (averages). Blank cells excluded.
+        if (carrierSec != null) {
+          acc.carrierN += 1;
+          total.carrierN += 1;
+          if (mAcc) mAcc.carrierN += 1;
+          if (carrierSec < 15 * 60) {
+            acc.carrierOk += 1;
+            total.carrierOk += 1;
+            if (mAcc) mAcc.carrierOk += 1;
+          }
         }
-      }
-      // BJ: time_interval_buc. "% under 15 minutes" = "Under 15 Minutes" ÷ non-blank BJ.
-      if (intervalRaw) {
-        const under15 = /under\s*15/i.test(intervalRaw);
-        acc.intervalN += 1;
-        total.intervalN += 1;
-        if (mAcc) mAcc.intervalN += 1;
-        if (under15) {
-          acc.intervalOk += 1;
-          total.intervalOk += 1;
-          if (mAcc) mAcc.intervalOk += 1;
+        // BJ: time_interval_buc. "% under 15 minutes" = "Under 15 Minutes" ÷ non-blank BJ.
+        if (intervalRaw) {
+          const under15 = /under\s*15/i.test(intervalRaw);
+          acc.intervalN += 1;
+          total.intervalN += 1;
+          if (mAcc) mAcc.intervalN += 1;
+          if (under15) {
+            acc.intervalOk += 1;
+            total.intervalOk += 1;
+            if (mAcc) mAcc.intervalOk += 1;
+          }
         }
       }
       if (carrierName) {
