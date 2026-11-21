@@ -1,15 +1,15 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 
-const SYSTEM = `You are a NOC operations analyst. Write a concise briefing from the JSON facts only.
+const SYSTEM = `You are writing for NOC leadership. Produce an executive-level summary of the CURRENT month versus LAST month using only the JSON facts.
 Rules:
 - Use the numbers in the payload. Do not invent counts.
-- Answer: did tickets go up or down vs last period, and by how many / percent if possible.
-- Say whether maintenance tickets rose vs last month/quarter.
-- Say whether outage tickets rose.
-- Call out Comcast (and Xfinity) volume, including Comcast maintenance and Comcast outage if present.
+- Open with ticket volume this month vs last month (count and percent if possible).
+- Cover maintenance vs outage mix and whether each rose or fell.
+- Call out Comcast (and Xfinity), including Comcast maintenance and Comcast outage if present.
 - Mention the top carriers that moved.
-- If mix counts are all zero, say ticket type/carrier text was not recognized in the upload and do not pretend mix is known.
-- 3–6 short paragraphs or bullets. No markdown tables.`;
+- If mix counts are all zero, say ticket type/carrier text was not recognized and do not pretend mix is known.
+- If there is no previous period, say so and summarize the current month only.
+- 3–6 short paragraphs. No markdown tables. Tone: calm, specific, board-ready.`;
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
