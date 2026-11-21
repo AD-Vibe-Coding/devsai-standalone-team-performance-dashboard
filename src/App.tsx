@@ -17,6 +17,7 @@ export default function App() {
             <Route path="/trends" element={<Trends />} />
             <Route path="/individual" element={<Individual />} />
             <Route path="/insights" element={<Insights />} />
+            <Route path="/generate" element={<Generate />} />
             <Route path="/upload" element={<Upload />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>

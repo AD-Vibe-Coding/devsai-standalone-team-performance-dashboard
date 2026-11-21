@@ -8,6 +8,7 @@ const NAV = [
   { to: "/trends", label: "Team Trends", icon: TrendingUp },
   { to: "/individual", label: "Individual metrics", icon: UserRound },
   { to: "/insights", label: "Insights", icon: Sparkles },
+  { to: "/generate", label: "Generate", icon: PenLine },
   { to: "/upload", label: "Upload", icon: Upload },
 ];
 
