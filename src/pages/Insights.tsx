@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import ReactMarkdown from "react-markdown";
 import { Sparkles } from "lucide-react";
 import { useSnapshotUploads } from "@/lib/snapshot-store";
 import { hasLiveData, liveInsights, periodLabelsLive } from "@/lib/live-data";
