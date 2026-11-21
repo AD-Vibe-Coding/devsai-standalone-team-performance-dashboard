@@ -52,9 +52,9 @@ export const KPI_DEFS: KpiDef[] = [
     unit: "percent",
     higherIsBetter: true,
     description:
-      'Share of tickets with column BJ (time_interval_buc) equal to "Under 15 Minutes". Blank BJ cells are excluded.',
+      'Share of tickets with column BJ (time_interval_buc) equal to "Under 15 Minutes". Blank BJ cells and Automation-acked tickets are excluded.',
     formula:
-      'Count of "Under 15 Minutes" in BJ ÷ non-blank BJ cells in the month × 100. Target: more than 90%.',
+      'Count of "Under 15 Minutes" in BJ ÷ non-blank BJ cells in the month × 100, excluding Automation. Target: more than 90%.',
     memberSla: { kind: "at_least", value: 90, label: "more than 90% opened under 15 minutes" },
     overallSla: { kind: "at_least", value: 90, label: "more than 90% opened under 15 minutes" },
     showOnTeam: true,
@@ -115,8 +115,10 @@ export const KPI_DEFS: KpiDef[] = [
     short: "MTTR",
     unit: "seconds",
     higherIsBetter: false,
-    description: "Mean time to restore or resolve a ticket, from open to close.",
-    formula: "Sum of restore seconds ÷ tickets resolved. Member and team SLA: under 4 hours.",
+    description:
+      "Mean time to restore or resolve a ticket, from open to close. Automation-acked tickets are excluded.",
+    formula:
+      "Sum of restore seconds ÷ tickets resolved, excluding Automation. Member and team SLA: under 4 hours.",
     memberSla: { kind: "under", value: 14400, label: "under 4 hours" },
     overallSla: { kind: "under", value: 14400, label: "under 4 hours" },
     showOnTeam: true,

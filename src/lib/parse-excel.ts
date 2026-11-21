@@ -689,25 +689,27 @@ export function parseWorkbook(kind: UploadKind, filename: string, buffer: ArrayB
       applyPatterns(acc);
       applyPatterns(total);
       if (mAcc) applyPatterns(mAcc);
-      // BD: "Less than 24 hours" vs other non-blank labels (e.g. "More than 24 hours"). Blanks excluded.
-      if (closedRaw) {
-        acc.closedN += 1;
-        total.closedN += 1;
-        if (mAcc) mAcc.closedN += 1;
-        const closedLabel = closedRaw.toLowerCase();
-        if (closedLabel.includes("less than 24")) {
-          acc.closed24 += 1;
-          total.closed24 += 1;
-          if (mAcc) mAcc.closed24 += 1;
+      if (!automationAck) {
+        // BD: "Less than 24 hours" vs other non-blank labels. Blanks excluded.
+        if (closedRaw) {
+          acc.closedN += 1;
+          total.closedN += 1;
+          if (mAcc) mAcc.closedN += 1;
+          const closedLabel = closedRaw.toLowerCase();
+          if (closedLabel.includes("less than 24")) {
+            acc.closed24 += 1;
+            total.closed24 += 1;
+            if (mAcc) mAcc.closed24 += 1;
+          }
+        }
+        if (mttrSec != null) {
+          acc.mttr.push(mttrSec);
+          total.mttr.push(mttrSec);
+          mAcc?.mttr.push(mttrSec);
         }
       }
-      if (mttrSec != null) {
-        acc.mttr.push(mttrSec);
-        total.mttr.push(mttrSec);
-        mAcc?.mttr.push(mttrSec);
-      }
 
-      if (isAutomationAck(agent)) {
+      if (automationAck) {
         const bumpAuto = (a: Acc) => {
           a.autoTickets += 1;
           if (ackSec != null) a.autoAck.push(ackSec);
