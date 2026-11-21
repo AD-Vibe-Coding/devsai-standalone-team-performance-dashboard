@@ -188,20 +188,25 @@ function MetricTrend({
 
 export default function Trends() {
   const [grain, setGrain] = useState<TrendGrain>("month");
-  const series = snapshotTrends(grain);
+  const series = snapshotTrends(grain).map((p) => ({ ...p, volumes: { ...p.volumes }, kpis: { ...p.kpis } }));
   const { uploads } = useSnapshotUploads();
-  const overlay = uploads.reduce(
-    (acc, u) => ({ volumes: { ...acc.volumes, ...u.volumes }, kpis: { ...acc.kpis, ...u.kpis } }),
-    { volumes: {} as Record<string, number>, kpis: {} as Record<string, number> },
-  );
-  const last = series[series.length - 1];
-  if (last) {
-    last.volumes = { ...last.volumes, ...(overlay.volumes as typeof last.volumes) };
-    last.kpis = { ...last.kpis, ...overlay.kpis };
+  for (const p of series) {
+    const keys =
+      grain === "month"
+        ? [monthKeyFromLabel(p.label)].filter((k): k is string => Boolean(k))
+        : quarterKeyFromLabel(p.label);
+    for (const u of uploads) {
+      const slices = u.months.filter((m) => keys.includes(m.monthKey));
+      if (!slices.length) continue;
+      for (const s of slices) {
+        p.volumes = { ...p.volumes, ...s.volumes } as typeof p.volumes;
+        p.kpis = { ...p.kpis, ...s.kpis };
+      }
+    }
   }
   const carriers = (() => {
     const base = topCarriers(grain);
-    const extra = uploads.flatMap((u) => u.carriers);
+    const extra = uploads.flatMap((u) => u.months.flatMap((m) => m.carriers));
     if (!extra.length) return base;
     const map = new Map(base.map((c) => [c.name, c.tickets]));
     for (const c of extra) map.set(c.name, (map.get(c.name) ?? 0) + c.tickets);

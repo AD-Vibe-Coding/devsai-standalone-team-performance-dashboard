@@ -26,7 +26,7 @@ const ZONES: {
     title: "Mobility tasks",
     hint: "One row per mobility task.",
     icon: Truck,
-    columns: "Duration or SLA (under 60 minutes)",
+    columns: "Column B = month, then Duration or SLA (under 60 minutes)",
   },
   {
     kind: "calls",
@@ -174,7 +174,9 @@ export default function Upload() {
               <FileSpreadsheet className="size-4 text-muted-foreground" aria-hidden />
               <span className="font-medium">{u.filename}</span>
               <Badge variant="secondary">{u.kind}</Badge>
-              <span className="text-muted-foreground">{u.used} rows</span>
+              <span className="text-muted-foreground">
+                {u.used} rows · {u.months.map((m) => m.monthLabel).join(", ") || "no months"}
+              </span>
             </li>
           ))}
         </ul>

@@ -47,12 +47,28 @@ export default function Overview() {
   const { uploads } = useSnapshotUploads();
   const overlayVolumes = { ...data.volumes };
   const overlayKpis = { ...data.kpis };
+  const periodKeys =
+    grain === "month"
+      ? [monthKeyFromLabel(label)].filter((k): k is string => Boolean(k))
+      : quarterKeyFromLabel(label);
   for (const u of uploads) {
-    for (const [k, v] of Object.entries(u.volumes)) {
-      overlayVolumes[k as VolumeKey] = v as number;
+    const slices = u.months.filter((m) => periodKeys.includes(m.monthKey));
+    if (!slices.length) continue;
+    const volumes: Partial<Record<VolumeKey, number>> = {};
+    const kpis: Record<string, number> = {};
+    const kpiN: Record<string, number> = {};
+    for (const s of slices) {
+      for (const [k, v] of Object.entries(s.volumes)) {
+        volumes[k as VolumeKey] = (volumes[k as VolumeKey] ?? 0) + (v as number);
+      }
+      for (const [k, v] of Object.entries(s.kpis)) {
+        kpis[k] = (kpis[k] ?? 0) + (v as number) * (s.used || 1);
+        kpiN[k] = (kpiN[k] ?? 0) + (s.used || 1);
+      }
     }
-    for (const [k, v] of Object.entries(u.kpis)) {
-      overlayKpis[k] = { value: v as number, n: overlayKpis[k]?.n ?? 1 };
+    for (const [k, v] of Object.entries(volumes)) overlayVolumes[k as VolumeKey] = v as number;
+    for (const [k, v] of Object.entries(kpis)) {
+      overlayKpis[k] = { value: v / (kpiN[k] || 1), n: overlayKpis[k]?.n ?? 1 };
     }
   }
   const view = { ...data, volumes: overlayVolumes, kpis: overlayKpis };
