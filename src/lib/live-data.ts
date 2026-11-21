@@ -144,4 +144,33 @@ export function liveLeaderboard(
     .sort((a, b) => b.tickets - a.tickets);
 }
 
+export type KpiLeaderRow = {
+  name: string;
+  value: number;
+  tickets: number;
+};
+
+/** Rank members by one KPI for the selected period. Missing values are omitted. */
+export function liveKpiLeaderboard(
+  uploads: UploadResult[],
+  grain: PeriodGrain,
+  index: number,
+  names: readonly string[],
+  kpiKey: string,
+  higherIsBetter: boolean,
+): KpiLeaderRow[] {
+  const labels = periodLabelsLive(grain);
+  const i = Math.max(0, Math.min(index, labels.length - 1));
+  const keys = keysForLabel(grain, labels[i]);
+  const rows: KpiLeaderRow[] = [];
+  for (const name of names) {
+    const overview = mergeSlices(memberSlicesFor(uploads, name, keys));
+    const cell = overview.kpis[kpiKey];
+    if (!cell || !Number.isFinite(cell.value)) continue;
+    rows.push({ name, value: cell.value, tickets: overview.volumes.tickets_received });
+  }
+  rows.sort((a, b) => (higherIsBetter ? b.value - a.value : a.value - b.value));
+  return rows;
+}
+
 export type { KpiKey };

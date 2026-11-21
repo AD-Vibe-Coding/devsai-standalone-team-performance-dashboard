@@ -10,7 +10,7 @@ import {
 import { VOLUME_DEFS } from "@/lib/volumes";
 import { type PeriodGrain } from "@/lib/seed-snapshot";
 import { useSnapshotUploads } from "@/lib/snapshot-store";
-import { hasLiveData, liveAt, liveLeaderboard, periodLabelsLive } from "@/lib/live-data";
+import { hasLiveData, liveAt, liveKpiLeaderboard, periodLabelsLive } from "@/lib/live-data";
 import { TEAM_MEMBERS } from "@/lib/team-members";
 import { Delta } from "@/components/Delta";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -38,8 +38,6 @@ export default function Overview() {
     grain,
     selectedIndex,
   );
-  const board = liveLeaderboard(uploads, grain, selectedIndex, TEAM_MEMBERS);
-
   function onGrainChange(next: PeriodGrain) {
     setGrain(next);
     setIndex(periodLabelsLive(next).length - 1);
@@ -150,9 +148,11 @@ export default function Overview() {
 
       <div>
         <h2 className="font-display text-2xl">SLA</h2>
-        <p className="mt-1 text-sm text-muted-foreground">Floor-wide rates against published targets.</p>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Floor-wide rates against published targets. Each metric has its own leaderboard for {label}.
+        </p>
       </div>
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-6 lg:grid-cols-2">
         {KPI_DEFS.filter((k) => k.showOnTeam).map((k) => {
           const overallKey = k.overallKey ?? k.key;
           const overallDef = KPI_BY_KEY[overallKey];
@@ -161,12 +161,20 @@ export default function Overview() {
           const priorV = prior ? (prior.kpis[overallKey] ?? prior.kpis[k.key])?.value ?? 0 : null;
           const met = slaMet(k.overallSla, v);
           const has = cell != null;
+          const rank = liveKpiLeaderboard(
+            uploads,
+            grain,
+            selectedIndex,
+            TEAM_MEMBERS,
+            overallKey,
+            overallDef.higherIsBetter,
+          );
           return (
             <Card key={k.key} className="relative overflow-hidden">
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">{k.label}</CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="space-y-4">
                 {!has ? (
                   <p className="text-sm text-muted-foreground">Not in this file</p>
                 ) : overallDef.unit === "seconds" ? (
@@ -195,77 +203,53 @@ export default function Overview() {
                     ) : null}
                   </p>
                 )}
-                <p className="mt-1 text-xs text-muted-foreground">
+                <p className="text-xs text-muted-foreground">
                   Overall SLA · {slaLabel(k.overallSla)}
                 </p>
                 {has && met === true ? (
-                  <Badge className="mt-2">On SLA</Badge>
+                  <Badge>On SLA</Badge>
                 ) : has && met === false ? (
-                  <Badge variant="destructive" className="mt-2">
-                    Off SLA
-                  </Badge>
+                  <Badge variant="destructive">Off SLA</Badge>
                 ) : null}
+
+                <div className="border-t border-border pt-3">
+                  <p className="mb-2 text-[11px] uppercase tracking-wider text-muted-foreground">
+                    Leaderboard · {overallDef.higherIsBetter ? "highest first" : "fastest first"}
+                  </p>
+                  {!has ? (
+                    <p className="text-sm text-muted-foreground">No ranking until this metric is in the file.</p>
+                  ) : rank.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">
+                      No names matched Tickets Acked By for this metric in {label}.
+                    </p>
+                  ) : (
+                    <table className="w-full text-left text-sm">
+                      <thead className="text-[11px] uppercase tracking-wider text-muted-foreground">
+                        <tr>
+                          <th className="py-1.5 pr-2 font-medium">#</th>
+                          <th className="py-1.5 pr-2 font-medium">Member</th>
+                          <th className="py-1.5 text-right font-medium tabular-nums">Score</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {rank.map((row, i) => (
+                          <tr key={row.name} className="border-t border-border/70">
+                            <td className="py-1.5 pr-2 tabular-nums text-muted-foreground">{i + 1}</td>
+                            <td className="py-1.5 pr-2 font-medium">{row.name}</td>
+                            <td className="py-1.5 text-right tabular-nums">
+                              {formatKpi(row.value, overallDef.unit)}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                </div>
               </CardContent>
             </Card>
           );
         })}
       </div>
-
-      <div>
-        <h2 className="font-display text-2xl">Leaderboard</h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Ranked by tickets acknowledged (column AO) in {label}. Blank Acked By rows are not listed.
-        </p>
-      </div>
-      {board.length === 0 ? (
-        <Card>
-          <CardContent className="py-8 text-sm text-muted-foreground">
-            No names matched Tickets Acked By for this period. Re-upload the tickets file after the latest parser change.
-          </CardContent>
-        </Card>
-      ) : (
-        <Card>
-          <CardContent className="overflow-x-auto p-0">
-            <table className="w-full text-left text-sm">
-              <thead className="border-b border-border bg-secondary/50 text-[11px] uppercase tracking-wider text-muted-foreground">
-                <tr>
-                  <th className="px-4 py-3 font-medium">#</th>
-                  <th className="px-4 py-3 font-medium">Member</th>
-                  <th className="px-4 py-3 font-medium tabular-nums">Tickets</th>
-                  <th className="px-4 py-3 font-medium tabular-nums">Avg ack</th>
-                  <th className="px-4 py-3 font-medium tabular-nums">Carrier open</th>
-                  <th className="px-4 py-3 font-medium tabular-nums">Closed &lt;24h</th>
-                </tr>
-              </thead>
-              <tbody>
-                {board.map((row, i) => {
-                  const k = row.overview.kpis;
-                  return (
-                    <tr key={row.name} className="border-b border-border last:border-0">
-                      <td className="px-4 py-3 tabular-nums text-muted-foreground">{i + 1}</td>
-                      <td className="px-4 py-3 font-medium">{row.name}</td>
-                      <td className="px-4 py-3 tabular-nums">{row.tickets.toLocaleString("en-US")}</td>
-                      <td className="px-4 py-3 tabular-nums">
-                        {k.avg_ack_seconds ? formatKpi(k.avg_ack_seconds.value, "seconds") : "—"}
-                      </td>
-                      <td className="px-4 py-3 tabular-nums">
-                        {k.carrier_open_sla_pct
-                          ? `${k.carrier_open_sla_pct.value.toFixed(1)}%`
-                          : "—"}
-                      </td>
-                      <td className="px-4 py-3 tabular-nums">
-                        {k.closed_under_24h_pct
-                          ? `${k.closed_under_24h_pct.value.toFixed(1)}%`
-                          : "—"}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </CardContent>
-        </Card>
-      )}
     </div>
   );
 }
