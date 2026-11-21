@@ -38,6 +38,7 @@ export default function Overview() {
     grain,
     selectedIndex,
   );
+  const board = liveLeaderboard(uploads, grain, selectedIndex, TEAM_MEMBERS);
 
   function onGrainChange(next: PeriodGrain) {
     setGrain(next);
