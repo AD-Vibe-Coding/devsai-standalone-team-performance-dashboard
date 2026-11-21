@@ -77,7 +77,7 @@ function TrendArea({
           }
         />
         <Tooltip
-          formatter={(val: number) => formatValue(val)}
+          formatter={(val) => formatValue(Number(val ?? 0))}
           contentStyle={{
             borderRadius: 8,
             border: "1px solid #d5dde5",
@@ -97,11 +97,8 @@ function TrendArea({
           <LabelList
             dataKey="value"
             position="top"
-            content={(props: {
-              x?: number | string;
-              y?: number | string;
-              value?: number | string;
-            }) => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            content={(props: any) => {
               const x = Number(props.x);
               const y = Number(props.y);
               const value = Number(props.value);

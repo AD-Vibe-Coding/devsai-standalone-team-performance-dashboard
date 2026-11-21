@@ -14,6 +14,7 @@ export default function App() {
           <Route element={<AppShell />}>
             <Route path="/" element={<Overview />} />
             <Route path="/trends" element={<Trends />} />
+            <Route path="/individual" element={<Individual />} />
             <Route path="/upload" element={<Upload />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>

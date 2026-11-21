@@ -1,6 +1,7 @@
 import * as XLSX from "xlsx";
 import type { KpiKey } from "./kpis";
 import type { VolumeKey } from "./volumes";
+import { matchTeamMember } from "./team-members";
 
 export type UploadKind = "tickets" | "mobility" | "calls";
 
@@ -118,23 +119,6 @@ export function quarterKeyFromLabel(label: string): string[] {
   const y = 2000 + Number(m[2]);
   const start = (q - 1) * 3 + 1;
   return [0, 1, 2].map((i) => `${y}-${pad2(start + i)}`);
-}
-
-function colB(row: Record<string, unknown>, headers: string[]): unknown {
-  return colAt(row, headers, 1);
-}
-
-/** 0-based column index (A=0, B=1, … AN=39). */
-function colAt(row: Record<string, unknown>, headers: string[], index: number): unknown {
-  if (headers.length > index) {
-    const h = headers[index];
-    if (h != null && row[h] != null && String(row[h]).trim() !== "") return row[h];
-  }
-  const keys = Object.keys(row);
-  if (keys.length > index && row[keys[index]] != null && String(row[keys[index]]).trim() !== "") {
-    return row[keys[index]];
-  }
-  return "";
 }
 
 function cell(row: Record<string, unknown>, ...names: string[]) {
@@ -301,6 +285,7 @@ export function parseWorkbook(kind: UploadKind, filename: string, buffer: ArrayB
   const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: "" });
   const errors: string[] = [];
   const byMonth = new Map<string, { label: string; acc: Acc }>();
+  const byMemberMonth = new Map<string, Map<string, { label: string; acc: Acc }>>();
   const total = emptyAcc();
   let used = 0;
 
@@ -351,39 +336,60 @@ export function parseWorkbook(kind: UploadKind, filename: string, buffer: ArrayB
       used += 1;
       acc.used += 1;
       total.used += 1;
+      const memberName = matchTeamMember(agent);
+      let mAcc: Acc | null = null;
+      if (memberName) {
+        let mmap = byMemberMonth.get(memberName);
+        if (!mmap) {
+          mmap = new Map();
+          byMemberMonth.set(memberName, mmap);
+        }
+        const slot = mmap.get(parsedMonth.key) ?? { label: parsedMonth.label, acc: emptyAcc() };
+        if (!mmap.has(parsedMonth.key)) mmap.set(parsedMonth.key, slot);
+        mAcc = slot.acc;
+        mAcc.used += 1;
+      }
       if (ackSec != null) {
         acc.ack.push(ackSec);
         total.ack.push(ackSec);
+        mAcc?.ack.push(ackSec);
         if (ackSec < 300) {
           acc.ackUnder5 += 1;
           total.ackUnder5 += 1;
+          if (mAcc) mAcc.ackUnder5 += 1;
         }
       }
       // AG: minutes to open with carrier. Blank cells excluded. Under 15 min = on time.
       if (carrierSec != null) {
         acc.carrierN += 1;
         total.carrierN += 1;
+        if (mAcc) mAcc.carrierN += 1;
         if (carrierSec < 15 * 60) {
           acc.carrierOk += 1;
           total.carrierOk += 1;
+          if (mAcc) mAcc.carrierOk += 1;
         }
       }
       if (carrierName) {
         acc.carriers.set(carrierName, (acc.carriers.get(carrierName) ?? 0) + 1);
         total.carriers.set(carrierName, (total.carriers.get(carrierName) ?? 0) + 1);
+        if (mAcc) mAcc.carriers.set(carrierName, (mAcc.carriers.get(carrierName) ?? 0) + 1);
       }
       const closedFlag = yesNo(closedRaw);
       if (closedFlag != null) {
         acc.closedN += 1;
         total.closedN += 1;
+        if (mAcc) mAcc.closedN += 1;
         if (closedFlag) {
           acc.closed24 += 1;
           total.closed24 += 1;
+          if (mAcc) mAcc.closed24 += 1;
         }
       }
       if (mttrSec != null) {
         acc.mttr.push(mttrSec);
         total.mttr.push(mttrSec);
+        mAcc?.mttr.push(mttrSec);
       }
     }
 
@@ -440,6 +446,14 @@ export function parseWorkbook(kind: UploadKind, filename: string, buffer: ArrayB
 
   const totals = finish(kind, total);
 
+  const members: Record<string, MonthSlice[]> = {};
+  for (const [name, mmap] of byMemberMonth.entries()) {
+    members[name] = [...mmap.entries()].map(([monthKey, { label, acc }]) => {
+      const done = finish(kind, acc);
+      return { monthKey, monthLabel: label, used: acc.used, ...done };
+    });
+  }
+
   return {
     kind,
     filename,
@@ -450,5 +464,6 @@ export function parseWorkbook(kind: UploadKind, filename: string, buffer: ArrayB
     kpis: totals.kpis,
     carriers: totals.carriers,
     months,
+    members,
   };
 }
