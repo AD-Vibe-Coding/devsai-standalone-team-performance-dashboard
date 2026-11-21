@@ -103,4 +103,20 @@ export function hasLiveData(uploads: UploadResult[]) {
   return uploads.some((u) => u.used > 0);
 }
 
+function memberSlicesFor(uploads: UploadResult[], member: string, keys: string[]): MonthSlice[] {
+  const set = new Set(keys);
+  return uploads.flatMap((u) => (u.members?.[member] ?? []).filter((m) => set.has(m.monthKey)));
+}
+
+/** Same series as liveTrends, but only tickets attributed to `member`. */
+export function liveMemberTrends(uploads: UploadResult[], grain: PeriodGrain, member: string) {
+  const labels = periodLabelsLive(grain);
+  return labels.map((label) => {
+    const { volumes, kpis } = mergeSlices(memberSlicesFor(uploads, member, keysForLabel(grain, label)));
+    const flat: Record<string, number> = {};
+    for (const [k, cell] of Object.entries(kpis)) flat[k] = cell.value;
+    return { label, volumes, kpis: flat };
+  });
+}
+
 export type { KpiKey };

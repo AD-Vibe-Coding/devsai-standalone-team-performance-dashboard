@@ -23,6 +23,8 @@ export type UploadResult = {
   kpis: Partial<Record<KpiKey, number>>;
   carriers: { name: string; tickets: number }[];
   months: MonthSlice[];
+  /** Per-roster-member month slices (tickets attributed via Acked By / agent). */
+  members: Record<string, MonthSlice[]>;
 };
 
 const MONTH_NAMES = [

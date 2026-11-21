@@ -2,6 +2,7 @@ import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { AppShell } from "@/components/AppShell";
 import Overview from "@/pages/Overview";
 import Trends from "@/pages/Trends";
+import Individual from "@/pages/Individual";
 import Upload from "@/pages/Upload";
 import { SnapshotProvider } from "@/lib/snapshot-store";
 
