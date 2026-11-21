@@ -119,13 +119,18 @@ export function quarterKeyFromLabel(label: string): string[] {
 }
 
 function colB(row: Record<string, unknown>, headers: string[]): unknown {
-  if (headers.length >= 2) {
-    const h = headers[1];
-    if (h && row[h] != null && String(row[h]).trim() !== "") return row[h];
+  return colAt(row, headers, 1);
+}
+
+/** 0-based column index (A=0, B=1, … AN=39). */
+function colAt(row: Record<string, unknown>, headers: string[], index: number): unknown {
+  if (headers.length > index) {
+    const h = headers[index];
+    if (h != null && row[h] != null && String(row[h]).trim() !== "") return row[h];
   }
-  for (const k of Object.keys(row)) {
-    const n = k.toLowerCase().replace(/[^a-z0-9]/g, "");
-    if (["month", "period", "date", "monthyear", "b"].includes(n)) return row[k];
+  const keys = Object.keys(row);
+  if (keys.length > index && row[keys[index]] != null && String(row[keys[index]]).trim() !== "") {
+    return row[keys[index]];
   }
   return "";
 }
@@ -158,6 +163,7 @@ function toSeconds(raw: string): number | null {
   }
   const n = Number(t.replace(/,/g, ""));
   if (!Number.isFinite(n)) return null;
+  if (n > 0 && n < 1) return n * 86400;
   if (n > 24 && n < 86400) return n;
   return n * 60;
 }

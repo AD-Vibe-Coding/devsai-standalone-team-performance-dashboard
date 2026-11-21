@@ -34,17 +34,15 @@ export type KpiDef = {
 export const KPI_DEFS: KpiDef[] = [
   {
     key: "avg_ack_seconds",
-    overallKey: "ack_under_5_pct",
     label: "Average acknowledgement time",
     short: "Avg ack",
     unit: "seconds",
     higherIsBetter: false,
     description:
-      "How long it takes to acknowledge a ticket. Member target is under 3 minutes. The floor-wide SLA is more than 95% of tickets acknowledged under 5 minutes.",
-    formula:
-      "Member: mean ack seconds. Overall: tickets acked in under 5 minutes ÷ tickets × 100. Overall SLA: more than 95%.",
+      "Mean of Excel column AN (Average acknowledgement time) for tickets in the selected month.",
+    formula: "Average of column AN. Target: under 3 minutes.",
     memberSla: { kind: "under", value: 180, label: "under 3 minutes" },
-    overallSla: { kind: "at_least", value: 95, label: "more than 95% of tickets acked under 5 minutes" },
+    overallSla: { kind: "under", value: 180, label: "under 3 minutes" },
     showOnTeam: true,
   },
   {

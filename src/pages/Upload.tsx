@@ -19,7 +19,7 @@ const ZONES: {
     title: "Trouble tickets",
     hint: "One row per ticket.",
     icon: Ticket,
-    columns: "Column B = month, then Acked By, Acked time, Carrier, MTTR, Closed under 24h",
+    columns: "Column B = month · Column AN = Average acknowledgement time",
   },
   {
     kind: "mobility",
