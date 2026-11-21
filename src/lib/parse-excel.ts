@@ -260,6 +260,7 @@ type Acc = {
   autoTickets: number;
   autoAck: number[];
   autoCarrier: number[];
+  autoCarrierOk: number;
   autoClosed24: number;
   autoClosedN: number;
   autoMttr: number[];

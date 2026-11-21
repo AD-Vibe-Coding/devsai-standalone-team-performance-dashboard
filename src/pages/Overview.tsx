@@ -231,6 +231,24 @@ export default function Overview() {
                       ) : null}
                     </p>
                   )}
+                  {auto.carrierOpenSlaPct != null && Number.isFinite(auto.carrierOpenSlaPct) ? (
+                    <p className="mt-2 text-sm tabular-nums">
+                      <span className="font-medium">{auto.carrierOpenSlaPct.toFixed(1)}%</span>
+                      <span className="text-muted-foreground"> under 15 minutes</span>
+                      {priorAuto?.carrierOpenSlaPct != null ? (
+                        <Delta
+                          current={auto.carrierOpenSlaPct}
+                          previous={priorAuto.carrierOpenSlaPct}
+                          higherIsBetter
+                          unit="percent"
+                        />
+                      ) : null}
+                    </p>
+                  ) : (
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      % under 15 min unavailable (no AG values on Automation tickets)
+                    </p>
+                  )}
                 </CardContent>
               </Card>
               <Card>

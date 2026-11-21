@@ -80,6 +80,7 @@ function mergeSlices(slices: MonthSlice[]): LiveOverview {
   let autoAckN = 0;
   let autoCarrierSum = 0;
   let autoCarrierN = 0;
+  let autoCarrierOk = 0;
   let autoClosed24 = 0;
   let autoClosedN = 0;
   let autoMttrSum = 0;
