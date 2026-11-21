@@ -25,7 +25,7 @@ export type UploadResult = {
   carriers: { name: string; tickets: number }[];
   months: MonthSlice[];
   /** Per-roster-member month slices (tickets attributed via Acked By / agent). */
-  members: Record<string, MonthSlice[]>;
+  members?: Record<string, MonthSlice[]>;
 };
 
 const MONTH_NAMES = [

@@ -76,7 +76,7 @@ function TrendArea({
           }
         />
         <Tooltip
-          formatter={(val: number) => formatValue(val)}
+          formatter={(val) => formatValue(Number(val ?? 0))}
           contentStyle={{
             borderRadius: 8,
             border: "1px solid #d5dde5",
