@@ -81,6 +81,7 @@ function mergeSlices(slices: MonthSlice[]): LiveOverview {
   let autoCarrierSum = 0;
   let autoCarrierN = 0;
   let autoCarrierOk = 0;
+  let autoCarrierIntervalN = 0;
   let autoClosed24 = 0;
   let autoClosedN = 0;
   let autoMttrSum = 0;
@@ -108,6 +109,8 @@ function mergeSlices(slices: MonthSlice[]): LiveOverview {
       autoAckN += a.ackN;
       autoCarrierSum += a.carrierSum;
       autoCarrierN += a.carrierN;
+      autoCarrierOk += a.carrierOk ?? 0;
+      autoCarrierIntervalN += a.carrierIntervalN ?? 0;
       autoClosed24 += a.closed24;
       autoClosedN += a.closedN;
       autoMttrSum += a.mttrSum;
@@ -124,7 +127,9 @@ function mergeSlices(slices: MonthSlice[]): LiveOverview {
     sharePct: ticketTotal ? (autoTickets / ticketTotal) * 100 : null,
     avgAckSeconds: autoAckN ? autoAckSum / autoAckN : null,
     avgCarrierOpenMinutes: autoCarrierN ? autoCarrierSum / autoCarrierN / 60 : null,
-    carrierOpenSlaPct: null,
+    carrierOpenSlaPct: autoCarrierIntervalN
+      ? (autoCarrierOk / autoCarrierIntervalN) * 100
+      : null,
     closedUnder24Pct: autoClosedN ? (autoClosed24 / autoClosedN) * 100 : null,
     avgMttrSeconds: autoMttrN ? autoMttrSum / autoMttrN : null,
   };

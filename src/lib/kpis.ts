@@ -52,9 +52,9 @@ export const KPI_DEFS: KpiDef[] = [
     unit: "percent",
     higherIsBetter: true,
     description:
-      "Share of tickets opened with the carrier in under 15 minutes (Excel column AG). Blank AG cells are excluded.",
+      'Share of tickets with column BJ (time_interval_buc) equal to "Under 15 Minutes". Blank BJ cells are excluded.',
     formula:
-      "Tickets with AG < 15 minutes ÷ tickets with a non-blank AG × 100, for the selected month. Target: more than 90%.",
+      'Count of "Under 15 Minutes" in BJ ÷ non-blank BJ cells in the month × 100. Target: more than 90%.',
     memberSla: { kind: "at_least", value: 90, label: "more than 90% opened under 15 minutes" },
     overallSla: { kind: "at_least", value: 90, label: "more than 90% opened under 15 minutes" },
     showOnTeam: true,

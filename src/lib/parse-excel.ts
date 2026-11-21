@@ -257,10 +257,13 @@ type Acc = {
   carrierOpenByCarrier: Map<string, { sum: number; n: number }>;
   days: Map<string, number>;
   hours: Map<string, number>;
+  intervalOk: number;
+  intervalN: number;
   autoTickets: number;
   autoAck: number[];
   autoCarrier: number[];
-  autoCarrierOk: number;
+  autoIntervalOk: number;
+  autoIntervalN: number;
   autoClosed24: number;
   autoClosedN: number;
   autoMttr: number[];
@@ -296,9 +299,13 @@ function emptyAcc(): Acc {
     carrierOpenByCarrier: new Map(),
     days: new Map(),
     hours: new Map(),
+    intervalOk: 0,
+    intervalN: 0,
     autoTickets: 0,
     autoAck: [],
     autoCarrier: [],
+    autoIntervalOk: 0,
+    autoIntervalN: 0,
     autoClosed24: 0,
     autoClosedN: 0,
     autoMttr: [],
@@ -392,7 +399,8 @@ function finish(kind: UploadKind, acc: Acc): {
       kpis.avg_ack_seconds = acc.ack.reduce((a, b) => a + b, 0) / acc.ack.length;
       kpis.ack_under_5_pct = (acc.ackUnder5 / acc.ack.length) * 100;
     }
-    if (acc.carrierN) kpis.carrier_open_sla_pct = (acc.carrierOk / acc.carrierN) * 100;
+    if (acc.intervalN) kpis.carrier_open_sla_pct = (acc.intervalOk / acc.intervalN) * 100;
+    else if (acc.carrierN) kpis.carrier_open_sla_pct = (acc.carrierOk / acc.carrierN) * 100;
     if (acc.closedN) kpis.closed_under_24h_pct = (acc.closed24 / acc.closedN) * 100;
     if (acc.mttr.length) kpis.avg_mttr_seconds = acc.mttr.reduce((a, b) => a + b, 0) / acc.mttr.length;
   }
@@ -445,6 +453,8 @@ function finish(kind: UploadKind, acc: Acc): {
             ackN: acc.autoAck.length,
             carrierSum: acc.autoCarrier.reduce((a, b) => a + b, 0),
             carrierN: acc.autoCarrier.length,
+            carrierOk: acc.autoIntervalOk,
+            carrierIntervalN: acc.autoIntervalN,
             closed24: acc.autoClosed24,
             closedN: acc.autoClosedN,
             mttrSum: acc.autoMttr.reduce((a, b) => a + b, 0),
@@ -608,7 +618,7 @@ export function parseWorkbook(kind: UploadKind, filename: string, buffer: ArrayB
           if (mAcc) mAcc.ackUnder5 += 1;
         }
       }
-      // AG: minutes to open with carrier. Blank cells excluded. Under 15 min = on time.
+      // AG: minutes to open with carrier (averages). Blank cells excluded.
       if (carrierSec != null) {
         acc.carrierN += 1;
         total.carrierN += 1;
@@ -617,6 +627,18 @@ export function parseWorkbook(kind: UploadKind, filename: string, buffer: ArrayB
           acc.carrierOk += 1;
           total.carrierOk += 1;
           if (mAcc) mAcc.carrierOk += 1;
+        }
+      }
+      // BJ: time_interval_buc. "% under 15 minutes" = "Under 15 Minutes" ÷ non-blank BJ.
+      if (intervalRaw) {
+        const under15 = /under\s*15/i.test(intervalRaw);
+        acc.intervalN += 1;
+        total.intervalN += 1;
+        if (mAcc) mAcc.intervalN += 1;
+        if (under15) {
+          acc.intervalOk += 1;
+          total.intervalOk += 1;
+          if (mAcc) mAcc.intervalOk += 1;
         }
       }
       if (carrierName) {
@@ -682,6 +704,10 @@ export function parseWorkbook(kind: UploadKind, filename: string, buffer: ArrayB
           a.autoTickets += 1;
           if (ackSec != null) a.autoAck.push(ackSec);
           if (carrierSec != null) a.autoCarrier.push(carrierSec);
+          if (intervalRaw) {
+            a.autoIntervalN += 1;
+            if (/under\s*15/i.test(intervalRaw)) a.autoIntervalOk += 1;
+          }
           if (closedRaw) {
             a.autoClosedN += 1;
             if (closedRaw.toLowerCase().includes("less than 24")) a.autoClosed24 += 1;
