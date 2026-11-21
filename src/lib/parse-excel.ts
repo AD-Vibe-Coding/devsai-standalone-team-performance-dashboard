@@ -303,6 +303,11 @@ export function parseWorkbook(kind: UploadKind, filename: string, buffer: ArrayB
     );
     return named >= 0 ? named : 32;
   })();
+  // Column AO (A=0 … AO=40): Tickets Acked By.
+  const ackedByCol = (() => {
+    const named = headerIndex(headerRow, "tickets acked by", "ticket acked by", "acked by");
+    return named >= 0 ? named : 40;
+  })();
 
   const dataRows = matrix.slice(1);
 
