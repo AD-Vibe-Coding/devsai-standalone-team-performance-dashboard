@@ -8,6 +8,13 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { BlurFade } from "@/components/ui/blur-fade";
 
+function cleanMarkdown(raw: string) {
+  return raw
+    .replace(/\\([*_])/g, "$1")
+    .replace(/\r\n/g, "\n")
+    .trim();
+}
+
 export default function Insights() {
   const { uploads } = useSnapshotUploads();
   const live = hasLiveData(uploads);
