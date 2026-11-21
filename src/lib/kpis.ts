@@ -102,9 +102,9 @@ export const KPI_DEFS: KpiDef[] = [
     unit: "percent",
     higherIsBetter: true,
     description:
-      "Share of tickets closed in under 24 hours (Excel column BD). Blank BD cells are excluded.",
+      'Share of tickets whose column BD says "Less than 24 hours". Blank BD cells are excluded.',
     formula:
-      "Tickets with BD < 24 hours ÷ tickets with a non-blank BD × 100, for the selected month. Target: more than 90%.",
+      'Count of "Less than 24 hours" in BD ÷ non-blank BD cells in the month × 100. Example: 4 less + 4 more = 50%. Target: more than 90%.',
     memberSla: { kind: "at_least", value: 90, label: "more than 90%" },
     overallSla: { kind: "at_least", value: 90, label: "more than 90%" },
     showOnTeam: true,

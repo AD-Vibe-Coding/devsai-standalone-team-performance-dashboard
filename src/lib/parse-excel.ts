@@ -392,12 +392,13 @@ export function parseWorkbook(kind: UploadKind, filename: string, buffer: ArrayB
         total.carriers.set(carrierName, (total.carriers.get(carrierName) ?? 0) + 1);
         if (mAcc) mAcc.carriers.set(carrierName, (mAcc.carriers.get(carrierName) ?? 0) + 1);
       }
-      const closedFlag = yesNo(closedRaw);
-      if (closedFlag != null) {
+      // BD: "Less than 24 hours" vs other non-blank labels (e.g. "More than 24 hours"). Blanks excluded.
+      if (closedRaw) {
         acc.closedN += 1;
         total.closedN += 1;
         if (mAcc) mAcc.closedN += 1;
-        if (closedFlag) {
+        const closedLabel = closedRaw.toLowerCase();
+        if (closedLabel.includes("less than 24")) {
           acc.closed24 += 1;
           total.closed24 += 1;
           if (mAcc) mAcc.closed24 += 1;
