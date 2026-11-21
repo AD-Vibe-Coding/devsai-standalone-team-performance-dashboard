@@ -351,11 +351,25 @@ export function parseWorkbook(kind: UploadKind, filename: string, buffer: ArrayB
       }
       used += 1;
       acc.used += 1;
-      if (dir === "inbound") acc.inbound += 1;
-      else if (dir === "outbound") acc.outbound += 1;
-      else acc.inbound += 1;
-      if (asaSec != null) acc.asa.push(asaSec);
-      if (refusedFlag) acc.refused += 1;
+      total.used += 1;
+      if (dir === "inbound") {
+        acc.inbound += 1;
+        total.inbound += 1;
+      } else if (dir === "outbound") {
+        acc.outbound += 1;
+        total.outbound += 1;
+      } else {
+        acc.inbound += 1;
+        total.inbound += 1;
+      }
+      if (asaSec != null) {
+        acc.asa.push(asaSec);
+        total.asa.push(asaSec);
+      }
+      if (refusedFlag) {
+        acc.refused += 1;
+        total.refused += 1;
+      }
     }
   });
 

@@ -19,7 +19,7 @@ const ZONES: {
     title: "Trouble tickets",
     hint: "One row per ticket.",
     icon: Ticket,
-    columns: "Acked By, Acked time, Time to open with carrier, Carrier, MTTR, Closed under 24h",
+    columns: "Column B = month, then Acked By, Acked time, Carrier, MTTR, Closed under 24h",
   },
   {
     kind: "mobility",
@@ -166,7 +166,7 @@ export default function Upload() {
         ) : null}
       </div>
       {uploads.length === 0 ? (
-        <p className="text-sm text-muted-foreground">No files yet. Dashboard still uses snapshot numbers.</p>
+        <p className="text-sm text-muted-foreground">No files yet. Dashboard and Trends stay empty until you upload.</p>
       ) : (
         <ul className="space-y-2">
           {uploads.map((u) => (

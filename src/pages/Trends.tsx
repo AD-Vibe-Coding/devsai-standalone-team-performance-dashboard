@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import {
   Area,
   AreaChart,
@@ -11,10 +12,11 @@ import {
 } from "recharts";
 import { KPI_BY_KEY, KPI_DEFS, formatKpi } from "@/lib/kpis";
 import { VOLUME_DEFS } from "@/lib/volumes";
-import { snapshotTrends, topCarriers, type TrendGrain } from "@/lib/seed-snapshot";
+import { type TrendGrain } from "@/lib/seed-snapshot";
 import { useSnapshotUploads } from "@/lib/snapshot-store";
-import { monthKeyFromLabel, quarterKeyFromLabel } from "@/lib/parse-excel";
+import { hasLiveData, liveCarriers, liveTrends } from "@/lib/live-data";
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { BlurFade } from "@/components/ui/blur-fade";
 import { NumberTicker } from "@/components/ui/number-ticker";
 import { Delta } from "@/components/Delta";
@@ -188,36 +190,36 @@ function MetricTrend({
 
 export default function Trends() {
   const [grain, setGrain] = useState<TrendGrain>("month");
-  const series = snapshotTrends(grain).map((p) => ({ ...p, volumes: { ...p.volumes }, kpis: { ...p.kpis } }));
   const { uploads } = useSnapshotUploads();
-  for (const p of series) {
-    const keys =
-      grain === "month"
-        ? [monthKeyFromLabel(p.label)].filter((k): k is string => Boolean(k))
-        : quarterKeyFromLabel(p.label);
-    for (const u of uploads) {
-      const slices = u.months.filter((m) => keys.includes(m.monthKey));
-      if (!slices.length) continue;
-      for (const s of slices) {
-        p.volumes = { ...p.volumes, ...s.volumes } as typeof p.volumes;
-        p.kpis = { ...p.kpis, ...s.kpis };
-      }
-    }
-  }
-  const carriers = (() => {
-    const base = topCarriers(grain);
-    const extra = uploads.flatMap((u) => u.months.flatMap((m) => m.carriers));
-    if (!extra.length) return base;
-    const map = new Map(base.map((c) => [c.name, c.tickets]));
-    for (const c of extra) map.set(c.name, (map.get(c.name) ?? 0) + c.tickets);
-    const total = [...map.values()].reduce((a, b) => a + b, 0) || 1;
-    return [...map.entries()]
-      .map(([name, tickets]) => ({ name, tickets, share: tickets / total }))
-      .sort((a, b) => b.tickets - a.tickets)
-      .slice(0, 5);
-  })();
-  const windowLabel = grain === "month" ? "13 months" : "5 quarters";
+  const live = hasLiveData(uploads);
+  const series = liveTrends(uploads, grain);
+  const carriers = liveCarriers(uploads, grain);
+  const windowLabel = grain === "month" ? "13 months (Oct 25–Oct 26)" : "5 quarters (Q4 25–Q4 26)";
   const maxCarrier = carriers[0]?.tickets ?? 1;
+
+  if (!live) {
+    return (
+      <div className="space-y-8">
+        <BlurFade>
+          <div>
+            <p className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">NOC</p>
+            <h1 className="font-display mt-1 text-3xl md:text-4xl">Trends</h1>
+            <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
+              Charts use only uploaded Excel rows, grouped by column B (month).
+            </p>
+          </div>
+        </BlurFade>
+        <Card>
+          <CardContent className="flex flex-col items-start gap-4 py-10">
+            <p className="text-sm text-muted-foreground">No file loaded. Demo snapshot series is not shown.</p>
+            <Button asChild>
+              <Link to="/upload">Upload Excel</Link>
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">
@@ -238,7 +240,7 @@ export default function Trends() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="month">13 months</SelectItem>
-                <SelectItem value="quarter">5 quarters</SelectItem>
+                <SelectItem value="quarter">5 quarters · Q4 25–Q4 26</SelectItem>
               </SelectContent>
             </Select>
           </label>
@@ -275,6 +277,9 @@ export default function Trends() {
       </div>
       <Card>
         <CardContent className="space-y-4 p-5">
+          {carriers.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No carrier column found in the tickets file.</p>
+          ) : null}
           {carriers.map((c, i) => (
             <div key={c.name} className="grid grid-cols-[2rem_1fr_auto] items-center gap-3">
               <span className="font-display text-sm tabular-nums text-muted-foreground">{i + 1}</span>
