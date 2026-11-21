@@ -279,6 +279,17 @@ function emptyAcc(): Acc {
   };
 }
 
+function categorizeIssueType(raw: string): string {
+  const t = raw.trim();
+  if (!t) return "";
+  const n = t.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+  if (/\bmns\s*alert\b/.test(n)) return "MNS Alert";
+  if (/\bmaintenance\s*notification\b/.test(n) || /\bmaint(enance)?\s*notif/.test(n)) {
+    return "Maintenance Notification";
+  }
+  return "Other";
+}
+
 function bumpMap(map: Map<string, number>, key: string) {
   const k = key.trim();
   if (!k) return;

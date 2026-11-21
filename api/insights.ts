@@ -5,7 +5,7 @@ Use only the JSON. Do not invent counts.
 
 Cover, in this order, using **bold** for key figures and names:
 1. Volume trend across the window (payload.window). Note peaks, troughs, and latest month vs prior.
-2. Issue types (column M / issueTypes): which types rose or fell over months.
+2. Issue types (column M / issueTypes): only three buckets — **MNS Alert**, **Maintenance Notification**, and **Other** (everything else rolled together). Which of those three rose or fell over months.
 3. Resolutions (column X): dominant resolutions and shifts.
 4. Source (column Y): Tech Support vs manual. Treat "Tech Support" as system-opened; everything else as manual.
 5. Time to open with carrier (column AG, minutes): is avgCarrierOpenMinutes rising or falling? Which carriers in carrierOpenByCarrier drive that.
