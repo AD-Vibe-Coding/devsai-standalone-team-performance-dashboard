@@ -11,6 +11,13 @@ export type MonthSlice = {
   volumes: Partial<Record<VolumeKey, number>>;
   kpis: Partial<Record<KpiKey, number>>;
   carriers: { name: string; tickets: number }[];
+  mix?: {
+    maintenance: number;
+    outage: number;
+    comcast: number;
+    comcastMaintenance: number;
+    comcastOutage: number;
+  };
   used: number;
 };
 
@@ -211,6 +218,11 @@ type Acc = {
   asa: number[];
   refused: number;
   carriers: Map<string, number>;
+  maintenance: number;
+  outage: number;
+  comcast: number;
+  comcastMaintenance: number;
+  comcastOutage: number;
 };
 
 function emptyAcc(): Acc {
@@ -230,10 +242,20 @@ function emptyAcc(): Acc {
     asa: [],
     refused: 0,
     carriers: new Map(),
+    maintenance: 0,
+    outage: 0,
+    comcast: 0,
+    comcastMaintenance: 0,
+    comcastOutage: 0,
   };
 }
 
-function finish(kind: UploadKind, acc: Acc): { volumes: MonthSlice["volumes"]; kpis: MonthSlice["kpis"]; carriers: MonthSlice["carriers"] } {
+function finish(kind: UploadKind, acc: Acc): {
+  volumes: MonthSlice["volumes"];
+  kpis: MonthSlice["kpis"];
+  carriers: MonthSlice["carriers"];
+  mix: MonthSlice["mix"];
+} {
   const volumes: MonthSlice["volumes"] = {};
   const kpis: MonthSlice["kpis"] = {};
   if (kind === "tickets") {
@@ -260,7 +282,27 @@ function finish(kind: UploadKind, acc: Acc): { volumes: MonthSlice["volumes"]; k
     volumes,
     kpis,
     carriers: [...acc.carriers.entries()].map(([name, tickets]) => ({ name, tickets })),
+    mix:
+      kind === "tickets"
+        ? {
+            maintenance: acc.maintenance,
+            outage: acc.outage,
+            comcast: acc.comcast,
+            comcastMaintenance: acc.comcastMaintenance,
+            comcastOutage: acc.comcastOutage,
+          }
+        : undefined,
   };
+}
+
+function bumpMix(a: Acc, isMaint: boolean, isOutage: boolean, isComcast: boolean) {
+  if (isMaint) a.maintenance += 1;
+  if (isOutage) a.outage += 1;
+  if (isComcast) {
+    a.comcast += 1;
+    if (isMaint) a.comcastMaintenance += 1;
+    if (isOutage) a.comcastOutage += 1;
+  }
 }
 
 function headerIndex(headers: string[], ...names: string[]): number {
@@ -343,8 +385,18 @@ export function parseWorkbook(kind: UploadKind, filename: string, buffer: ArrayB
       const carrierBlank =
         carrierCell == null || String(carrierCell).trim() === "";
       const carrierSec = carrierBlank ? null : ackMinutesToSeconds(carrierCell);
-      const carrierName = cell(row, "carrier", "vendor");
-      const closedRaw = cell(row, "closed under 24", "closed in 24", "mttr hours", "resolve time");
+      const carrierName = cell(row, "carrier", "vendor", "provider");
+      const typeBlob = [
+        cell(row, "ticket type", "type", "category", "issue type", "classification"),
+        cell(row, "subject", "title", "summary", "description"),
+        carrierName,
+      ]
+        .join(" ")
+        .toLowerCase();
+      const isMaint = /\bmaint(enance)?\b|\bplanned work\b|\bscheduled\b/.test(typeBlob);
+      const isOutage = /\boutage\b|\bdown\b|\bservice affect/.test(typeBlob);
+      const isComcast = /\bcomcast\b|\bxfinity\b/.test(typeBlob);
+      const closedRaw = String(grid[closedCol] ?? "").trim();
       const mttrSec = toSeconds(cell(row, "mttr", "restore time", "time to restore"));
       if (!agent && ackSec == null && carrierSec == null && !carrierName && mttrSec == null) {
         if (i < 5) errors.push(`Row ${i + 2}: no ticket fields recognized`);
@@ -392,6 +444,9 @@ export function parseWorkbook(kind: UploadKind, filename: string, buffer: ArrayB
         total.carriers.set(carrierName, (total.carriers.get(carrierName) ?? 0) + 1);
         if (mAcc) mAcc.carriers.set(carrierName, (mAcc.carriers.get(carrierName) ?? 0) + 1);
       }
+      bumpMix(acc, isMaint, isOutage, isComcast);
+      bumpMix(total, isMaint, isOutage, isComcast);
+      if (mAcc) bumpMix(mAcc, isMaint, isOutage, isComcast);
       // BD: "Less than 24 hours" vs other non-blank labels (e.g. "More than 24 hours"). Blanks excluded.
       if (closedRaw) {
         acc.closedN += 1;

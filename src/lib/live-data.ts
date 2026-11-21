@@ -4,9 +4,17 @@ import type { KpiKey } from "./kpis";
 import type { VolumeKey } from "./volumes";
 
 export type LiveKpi = { value: number; n: number };
+export type LiveMix = {
+  maintenance: number;
+  outage: number;
+  comcast: number;
+  comcastMaintenance: number;
+  comcastOutage: number;
+};
 export type LiveOverview = {
   volumes: Record<VolumeKey, number>;
   kpis: Record<string, LiveKpi>;
+  mix: LiveMix;
 };
 
 const VOLUME_KEYS: VolumeKey[] = [
@@ -40,13 +48,25 @@ function slicesFor(uploads: UploadResult[], keys: string[]): MonthSlice[] {
   return uploads.flatMap((u) => u.months.filter((m) => set.has(m.monthKey)));
 }
 
+function emptyMix(): LiveMix {
+  return { maintenance: 0, outage: 0, comcast: 0, comcastMaintenance: 0, comcastOutage: 0 };
+}
+
 function mergeSlices(slices: MonthSlice[]): LiveOverview {
   const volumes = emptyVolumes();
+  const mix = emptyMix();
   const kpiSum: Record<string, number> = {};
   const kpiN: Record<string, number> = {};
   for (const s of slices) {
     for (const k of VOLUME_KEYS) {
       volumes[k] += s.volumes[k] ?? 0;
+    }
+    if (s.mix) {
+      mix.maintenance += s.mix.maintenance;
+      mix.outage += s.mix.outage;
+      mix.comcast += s.mix.comcast;
+      mix.comcastMaintenance += s.mix.comcastMaintenance;
+      mix.comcastOutage += s.mix.comcastOutage;
     }
     for (const [k, v] of Object.entries(s.kpis)) {
       const w = k === "avg_ack_seconds" ? Math.max(1, s.used) : s.used || 1;
@@ -58,7 +78,7 @@ function mergeSlices(slices: MonthSlice[]): LiveOverview {
   for (const [k, v] of Object.entries(kpiSum)) {
     kpis[k] = { value: v / (kpiN[k] || 1), n: kpiN[k] || 1 };
   }
-  return { volumes, kpis };
+  return { volumes, kpis, mix };
 }
 
 export function liveAt(uploads: UploadResult[], grain: PeriodGrain, index: number) {
@@ -171,6 +191,74 @@ export function liveKpiLeaderboard(
   }
   rows.sort((a, b) => (higherIsBetter ? b.value - a.value : a.value - b.value));
   return rows;
+}
+
+export type InsightPeriod = {
+  label: string;
+  tickets: number;
+  mix: LiveMix;
+  topCarriers: { name: string; tickets: number }[];
+};
+
+export type InsightsPayload = {
+  current: InsightPeriod;
+  previous: InsightPeriod | null;
+  deltas: {
+    tickets: number;
+    maintenance: number;
+    outage: number;
+    comcast: number;
+    comcastMaintenance: number;
+    comcastOutage: number;
+  };
+};
+
+function carriersFor(uploads: UploadResult[], keys: string[], limit = 8) {
+  const map = new Map<string, number>();
+  for (const s of slicesFor(uploads, keys)) {
+    for (const c of s.carriers) map.set(c.name, (map.get(c.name) ?? 0) + c.tickets);
+  }
+  return [...map.entries()]
+    .map(([name, tickets]) => ({ name, tickets }))
+    .sort((a, b) => b.tickets - a.tickets)
+    .slice(0, limit);
+}
+
+export function liveInsights(uploads: UploadResult[], grain: PeriodGrain, index: number): InsightsPayload {
+  const labels = periodLabelsLive(grain);
+  const i = Math.max(0, Math.min(index, labels.length - 1));
+  const curKeys = keysForLabel(grain, labels[i]);
+  const cur = mergeSlices(slicesFor(uploads, curKeys));
+  const current: InsightPeriod = {
+    label: labels[i],
+    tickets: cur.volumes.tickets_received,
+    mix: cur.mix,
+    topCarriers: carriersFor(uploads, curKeys),
+  };
+  let previous: InsightPeriod | null = null;
+  if (i > 0) {
+    const prevKeys = keysForLabel(grain, labels[i - 1]);
+    const prev = mergeSlices(slicesFor(uploads, prevKeys));
+    previous = {
+      label: labels[i - 1],
+      tickets: prev.volumes.tickets_received,
+      mix: prev.mix,
+      topCarriers: carriersFor(uploads, prevKeys),
+    };
+  }
+  const p = previous?.mix;
+  return {
+    current,
+    previous,
+    deltas: {
+      tickets: current.tickets - (previous?.tickets ?? 0),
+      maintenance: current.mix.maintenance - (p?.maintenance ?? 0),
+      outage: current.mix.outage - (p?.outage ?? 0),
+      comcast: current.mix.comcast - (p?.comcast ?? 0),
+      comcastMaintenance: current.mix.comcastMaintenance - (p?.comcastMaintenance ?? 0),
+      comcastOutage: current.mix.comcastOutage - (p?.comcastOutage ?? 0),
+    },
+  };
 }
 
 export type { KpiKey };

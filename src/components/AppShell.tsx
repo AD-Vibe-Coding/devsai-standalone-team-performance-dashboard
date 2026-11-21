@@ -1,5 +1,5 @@
 import { NavLink, Outlet } from "react-router-dom";
-import { LayoutDashboard, TrendingUp, Upload, UserRound } from "lucide-react";
+import { LayoutDashboard, Sparkles, TrendingUp, Upload, UserRound } from "lucide-react";
 import { ThemeToggle } from "./ThemeToggle";
 import { cn } from "@/lib/utils";
 
@@ -7,6 +7,7 @@ const NAV = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard },
   { to: "/trends", label: "Team Trends", icon: TrendingUp },
   { to: "/individual", label: "Individual metrics", icon: UserRound },
+  { to: "/insights", label: "Insights", icon: Sparkles },
   { to: "/upload", label: "Upload", icon: Upload },
 ];
 
