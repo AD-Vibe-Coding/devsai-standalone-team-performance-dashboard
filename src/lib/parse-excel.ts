@@ -340,6 +340,7 @@ function finish(kind: UploadKind, acc: Acc): {
   kpis: MonthSlice["kpis"];
   carriers: MonthSlice["carriers"];
   mix: MonthSlice["mix"];
+  patterns: MonthSlice["patterns"];
 } {
   const volumes: MonthSlice["volumes"] = {};
   const kpis: MonthSlice["kpis"] = {};
@@ -463,6 +464,27 @@ export function parseWorkbook(kind: UploadKind, filename: string, buffer: ArrayB
     );
     return named >= 0 ? named : 55;
   })();
+  // M=12 issue, X=23 resolution, Y=24 Ticket Opened By, AW=48 day_opened, AX=49 hour_opened
+  const issueCol = (() => {
+    const named = headerIndex(headerRow, "issue", "issue type", "ticket type", "category");
+    return named >= 0 ? named : 12;
+  })();
+  const resolutionCol = (() => {
+    const named = headerIndex(headerRow, "resolution");
+    return named >= 0 ? named : 23;
+  })();
+  const openedByCol = (() => {
+    const named = headerIndex(headerRow, "ticket opened by", "opened by");
+    return named >= 0 ? named : 24;
+  })();
+  const dayCol = (() => {
+    const named = headerIndex(headerRow, "day_opened", "day opened", "day of week");
+    return named >= 0 ? named : 48;
+  })();
+  const hourCol = (() => {
+    const named = headerIndex(headerRow, "hour_opened", "hour opened", "hour of day");
+    return named >= 0 ? named : 49;
+  })();
 
   const dataRows = matrix.slice(1);
 
@@ -549,6 +571,38 @@ export function parseWorkbook(kind: UploadKind, filename: string, buffer: ArrayB
       bumpMix(acc, isMaint, isOutage, isComcast);
       bumpMix(total, isMaint, isOutage, isComcast);
       if (mAcc) bumpMix(mAcc, isMaint, isOutage, isComcast);
+
+      const issueType =
+        String(grid[issueCol] ?? "").trim() || cell(row, "issue", "issue type", "ticket type");
+      const resolution = String(grid[resolutionCol] ?? "").trim() || cell(row, "resolution");
+      const openedBy =
+        String(grid[openedByCol] ?? "").trim() || cell(row, "ticket opened by", "opened by");
+      const dayLabel = parseDayLabel(grid[dayCol] ?? cell(row, "day_opened", "day opened"));
+      const hourLabel = parseHourLabel(grid[hourCol] ?? cell(row, "hour_opened", "hour opened"));
+      const carrierMin = carrierSec != null ? carrierSec / 60 : null;
+
+      const applyPatterns = (a: Acc) => {
+        if (issueType) bumpMap(a.issueTypes, issueType);
+        if (resolution) bumpMap(a.resolutions, resolution);
+        if (openedBy) {
+          if (/tech\s*support/i.test(openedBy)) a.techSupport += 1;
+          else a.manual += 1;
+        }
+        if (carrierMin != null && Number.isFinite(carrierMin)) {
+          a.carrierOpenMinutes.push(carrierMin);
+          if (carrierName) {
+            const slot = a.carrierOpenByCarrier.get(carrierName) ?? { sum: 0, n: 0 };
+            slot.sum += carrierMin;
+            slot.n += 1;
+            a.carrierOpenByCarrier.set(carrierName, slot);
+          }
+        }
+        if (dayLabel) bumpMap(a.days, dayLabel);
+        if (hourLabel) bumpMap(a.hours, hourLabel);
+      };
+      applyPatterns(acc);
+      applyPatterns(total);
+      if (mAcc) applyPatterns(mAcc);
       // BD: "Less than 24 hours" vs other non-blank labels (e.g. "More than 24 hours"). Blanks excluded.
       if (closedRaw) {
         acc.closedN += 1;

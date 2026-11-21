@@ -55,7 +55,7 @@ export default function Insights() {
             <p className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">NOC</p>
             <h1 className="font-display mt-1 text-3xl md:text-4xl">Insights</h1>
             <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-              Upload tickets first, then generate an executive month-over-month summary.
+              Upload tickets first, then analyze the last 13 months for issue, resolution, source, carrier-open time, hour, and day patterns.
             </p>
           </div>
         </BlurFade>
