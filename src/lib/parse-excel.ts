@@ -320,7 +320,8 @@ export function parseWorkbook(kind: UploadKind, filename: string, buffer: ArrayB
     const row = rows[i] ?? {};
 
     if (kind === "tickets") {
-      const agent = cell(row, "acked by", "agent", "owner", "assignee");
+      const agentFromGrid = String(grid[ackedByCol] ?? "").trim();
+      const agent = agentFromGrid || cell(row, "tickets acked by", "ticket acked by", "acked by", "agent", "owner", "assignee");
       const ackSec = ackMinutesToSeconds(grid[ackCol]);
       const carrierCell = grid[carrierCol];
       const carrierBlank =
