@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
 import { Sparkles } from "lucide-react";
@@ -34,7 +34,7 @@ export default function Insights() {
         body: JSON.stringify({
           payload: facts,
           question:
-            "Write an executive-level summary of the current month versus last month. Lead with volume, then mix (maintenance, outage), Comcast, and notable carriers. Be concise and suitable for leadership.",
+            "Analyze the last 13 months of tickets. Cover volume, issue types (M), resolutions (X), Tech Support vs manual (Y), time to open with carrier (AG) and which carriers drive it, hour of day (AX), and day of week (AW). Write an executive briefing of the patterns.",
         }),
       });
       const data = (await res.json()) as { briefing?: string; error?: string };
@@ -78,8 +78,7 @@ export default function Insights() {
           <p className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">NOC</p>
           <h1 className="font-display mt-1 text-3xl md:text-4xl">Insights</h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            Executive summary for {facts.current.label}
-            {facts.previous ? ` vs ${facts.previous.label}` : " (no prior month in this file)"}.
+            Pattern analysis for {facts.window}. Re-upload tickets so issue type, resolution, source, AG, day, and hour are included.
           </p>
         </div>
       </BlurFade>

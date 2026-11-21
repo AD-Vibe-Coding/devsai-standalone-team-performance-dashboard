@@ -18,7 +18,20 @@ export type MonthSlice = {
     comcastMaintenance: number;
     comcastOutage: number;
   };
+  patterns?: MonthPatterns;
   used: number;
+};
+
+export type NameCount = { name: string; tickets: number };
+
+export type MonthPatterns = {
+  issueTypes: NameCount[];
+  resolutions: NameCount[];
+  source: { techSupport: number; manual: number };
+  avgCarrierOpenMinutes: number | null;
+  carrierOpenByCarrier: { name: string; avgMinutes: number; n: number }[];
+  days: NameCount[];
+  hours: NameCount[];
 };
 
 export type UploadResult = {
@@ -223,6 +236,14 @@ type Acc = {
   comcast: number;
   comcastMaintenance: number;
   comcastOutage: number;
+  issueTypes: Map<string, number>;
+  resolutions: Map<string, number>;
+  techSupport: number;
+  manual: number;
+  carrierOpenMinutes: number[];
+  carrierOpenByCarrier: Map<string, { sum: number; n: number }>;
+  days: Map<string, number>;
+  hours: Map<string, number>;
 };
 
 function emptyAcc(): Acc {
@@ -247,7 +268,71 @@ function emptyAcc(): Acc {
     comcast: 0,
     comcastMaintenance: 0,
     comcastOutage: 0,
+    issueTypes: new Map(),
+    resolutions: new Map(),
+    techSupport: 0,
+    manual: 0,
+    carrierOpenMinutes: [],
+    carrierOpenByCarrier: new Map(),
+    days: new Map(),
+    hours: new Map(),
   };
+}
+
+function bumpMap(map: Map<string, number>, key: string) {
+  const k = key.trim();
+  if (!k) return;
+  map.set(k, (map.get(k) ?? 0) + 1);
+}
+
+function topMap(map: Map<string, number>, limit = 12): NameCount[] {
+  return [...map.entries()]
+    .map(([name, tickets]) => ({ name, tickets }))
+    .sort((a, b) => b.tickets - a.tickets)
+    .slice(0, limit);
+}
+
+function parseHourLabel(raw: unknown): string | null {
+  if (raw == null || raw === "") return null;
+  if (raw instanceof Date && !Number.isNaN(raw.getTime())) {
+    return String(raw.getUTCHours()).padStart(2, "0");
+  }
+  const t = String(raw).trim();
+  if (!t) return null;
+  const hm = t.match(/^(\d{1,2})(?::\d{2})?/);
+  if (hm) {
+    const h = Number(hm[1]);
+    if (h >= 0 && h <= 23) return String(h).padStart(2, "0");
+  }
+  const n = Number(t);
+  if (Number.isFinite(n) && n >= 0 && n < 1) {
+    return String(Math.floor(n * 24)).padStart(2, "0");
+  }
+  if (Number.isFinite(n) && n >= 0 && n <= 23) return String(Math.floor(n)).padStart(2, "0");
+  return t.slice(0, 16);
+}
+
+function parseDayLabel(raw: unknown): string | null {
+  if (raw == null || raw === "") return null;
+  if (raw instanceof Date && !Number.isNaN(raw.getTime())) {
+    return ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][raw.getUTCDay()] ?? null;
+  }
+  const t = String(raw).trim();
+  if (!t) return null;
+  const lower = t.toLowerCase();
+  const days: [string, string][] = [
+    ["sunday", "Sun"],
+    ["monday", "Mon"],
+    ["tuesday", "Tue"],
+    ["wednesday", "Wed"],
+    ["thursday", "Thu"],
+    ["friday", "Fri"],
+    ["saturday", "Sat"],
+  ];
+  for (const [full, short] of days) {
+    if (lower.startsWith(full.slice(0, 3))) return short;
+  }
+  return t.slice(0, 24);
 }
 
 function finish(kind: UploadKind, acc: Acc): {
@@ -290,6 +375,23 @@ function finish(kind: UploadKind, acc: Acc): {
             comcast: acc.comcast,
             comcastMaintenance: acc.comcastMaintenance,
             comcastOutage: acc.comcastOutage,
+          }
+        : undefined,
+    patterns:
+      kind === "tickets"
+        ? {
+            issueTypes: topMap(acc.issueTypes),
+            resolutions: topMap(acc.resolutions),
+            source: { techSupport: acc.techSupport, manual: acc.manual },
+            avgCarrierOpenMinutes: acc.carrierOpenMinutes.length
+              ? acc.carrierOpenMinutes.reduce((a, b) => a + b, 0) / acc.carrierOpenMinutes.length
+              : null,
+            carrierOpenByCarrier: [...acc.carrierOpenByCarrier.entries()]
+              .map(([name, v]) => ({ name, avgMinutes: v.sum / v.n, n: v.n }))
+              .sort((a, b) => b.avgMinutes - a.avgMinutes)
+              .slice(0, 10),
+            days: topMap(acc.days, 8),
+            hours: topMap(acc.hours, 24),
           }
         : undefined,
   };

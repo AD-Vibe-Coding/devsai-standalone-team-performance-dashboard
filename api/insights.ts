@@ -1,17 +1,19 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 
-const SYSTEM = `You are writing for NOC leadership. Produce an executive-level summary of the CURRENT month versus LAST month using only the JSON facts.
-Rules:
-- Use the numbers in the payload. Do not invent counts.
-- Open with ticket volume this month vs last month (count and percent if possible).
-- Cover maintenance vs outage mix and whether each rose or fell.
-- Call out Comcast (and Xfinity), including Comcast maintenance and Comcast outage if present.
-- Mention the top carriers that moved.
-- If mix counts are all zero, say ticket type/carrier text was not recognized and do not pretend mix is known.
-- If there is no previous period, say so and summarize the current month only.
-- 3–6 short paragraphs. Use markdown: **bold** for key figures and names, blank lines between paragraphs.
-- Do not wrap entire sentences in asterisks. Do not use tables.
-- Tone: calm, specific, board-ready.`;
+const SYSTEM = `You are writing for NOC leadership. Analyze the last 13 months in the JSON (payload.months) and write an executive briefing of patterns, not a single-month recap.
+Use only the JSON. Do not invent counts.
+
+Cover, in this order, using **bold** for key figures and names:
+1. Volume trend across the window (payload.window). Note peaks, troughs, and latest month vs prior.
+2. Issue types (column M / issueTypes): which types rose or fell over months.
+3. Resolutions (column X): dominant resolutions and shifts.
+4. Source (column Y): Tech Support vs manual. Treat "Tech Support" as system-opened; everything else as manual.
+5. Time to open with carrier (column AG, minutes): is avgCarrierOpenMinutes rising or falling? Which carriers in carrierOpenByCarrier drive that.
+6. Hour of day (column AX / hours) and day of week (column AW / days): which hours/days are increasing or decreasing.
+
+If a series is empty, say that field was not present in the upload. Do not pretend mix or patterns are known.
+6–10 short paragraphs. Blank lines between paragraphs. No tables. No wrapping whole sentences in asterisks.
+Tone: calm, specific, board-ready.`;
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {

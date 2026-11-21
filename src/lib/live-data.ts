@@ -1,5 +1,12 @@
 import { MONTH_LABELS, QUARTER_LABELS, type PeriodGrain } from "./seed-snapshot";
-import { monthKeyFromLabel, quarterKeyFromLabel, type MonthSlice, type UploadResult } from "./parse-excel";
+import {
+  monthKeyFromLabel,
+  quarterKeyFromLabel,
+  type MonthPatterns,
+  type MonthSlice,
+  type NameCount,
+  type UploadResult,
+} from "./parse-excel";
 import type { KpiKey } from "./kpis";
 import type { VolumeKey } from "./volumes";
 
@@ -198,11 +205,28 @@ export type InsightPeriod = {
   tickets: number;
   mix: LiveMix;
   topCarriers: { name: string; tickets: number }[];
+  patterns?: MonthPatterns;
+};
+
+export type PatternMonth = {
+  label: string;
+  tickets: number;
+  mix: LiveMix;
+  issueTypes: NameCount[];
+  resolutions: NameCount[];
+  techSupport: number;
+  manual: number;
+  avgCarrierOpenMinutes: number | null;
+  carrierOpenByCarrier: { name: string; avgMinutes: number; n: number }[];
+  days: NameCount[];
+  hours: NameCount[];
 };
 
 export type InsightsPayload = {
+  window: string;
   current: InsightPeriod;
   previous: InsightPeriod | null;
+  months: PatternMonth[];
   deltas: {
     tickets: number;
     maintenance: number;
@@ -224,9 +248,83 @@ function carriersFor(uploads: UploadResult[], keys: string[], limit = 8) {
     .slice(0, limit);
 }
 
+function mergeNameCounts(list: NameCount[][]): NameCount[] {
+  const map = new Map<string, number>();
+  for (const arr of list) {
+    for (const c of arr) map.set(c.name, (map.get(c.name) ?? 0) + c.tickets);
+  }
+  return [...map.entries()]
+    .map(([name, tickets]) => ({ name, tickets }))
+    .sort((a, b) => b.tickets - a.tickets)
+    .slice(0, 12);
+}
+
+function mergePatterns(slices: MonthSlice[]): MonthPatterns {
+  const issueTypes = mergeNameCounts(slices.map((s) => s.patterns?.issueTypes ?? []));
+  const resolutions = mergeNameCounts(slices.map((s) => s.patterns?.resolutions ?? []));
+  const days = mergeNameCounts(slices.map((s) => s.patterns?.days ?? []));
+  const hours = mergeNameCounts(slices.map((s) => s.patterns?.hours ?? []));
+  let techSupport = 0;
+  let manual = 0;
+  let openSum = 0;
+  let openN = 0;
+  const byCarrier = new Map<string, { sum: number; n: number }>();
+  for (const s of slices) {
+    const p = s.patterns;
+    if (!p) continue;
+    techSupport += p.source.techSupport;
+    manual += p.source.manual;
+    if (p.avgCarrierOpenMinutes != null && s.used) {
+      openSum += p.avgCarrierOpenMinutes * s.used;
+      openN += s.used;
+    }
+    for (const c of p.carrierOpenByCarrier) {
+      const slot = byCarrier.get(c.name) ?? { sum: 0, n: 0 };
+      slot.sum += c.avgMinutes * c.n;
+      slot.n += c.n;
+      byCarrier.set(c.name, slot);
+    }
+  }
+  return {
+    issueTypes,
+    resolutions,
+    source: { techSupport, manual },
+    avgCarrierOpenMinutes: openN ? openSum / openN : null,
+    carrierOpenByCarrier: [...byCarrier.entries()]
+      .map(([name, v]) => ({ name, avgMinutes: v.sum / v.n, n: v.n }))
+      .sort((a, b) => b.avgMinutes - a.avgMinutes)
+      .slice(0, 10),
+    days,
+    hours,
+  };
+}
+
+function patternMonthFrom(uploads: UploadResult[], grain: PeriodGrain, label: string): PatternMonth {
+  const keys = keysForLabel(grain, label);
+  const slices = slicesFor(uploads, keys);
+  const merged = mergeSlices(slices);
+  const patterns = mergePatterns(slices);
+  return {
+    label,
+    tickets: merged.volumes.tickets_received,
+    mix: merged.mix,
+    issueTypes: patterns.issueTypes,
+    resolutions: patterns.resolutions,
+    techSupport: patterns.source.techSupport,
+    manual: patterns.source.manual,
+    avgCarrierOpenMinutes: patterns.avgCarrierOpenMinutes,
+    carrierOpenByCarrier: patterns.carrierOpenByCarrier,
+    days: patterns.days,
+    hours: patterns.hours,
+  };
+}
+
 export function liveInsights(uploads: UploadResult[], grain: PeriodGrain, index: number): InsightsPayload {
   const labels = periodLabelsLive(grain);
   const i = Math.max(0, Math.min(index, labels.length - 1));
+  const start = Math.max(0, i - 12);
+  const windowLabels = labels.slice(start, i + 1);
+  const months = windowLabels.map((label) => patternMonthFrom(uploads, grain, label));
   const curKeys = keysForLabel(grain, labels[i]);
   const cur = mergeSlices(slicesFor(uploads, curKeys));
   const current: InsightPeriod = {
@@ -234,6 +332,7 @@ export function liveInsights(uploads: UploadResult[], grain: PeriodGrain, index:
     tickets: cur.volumes.tickets_received,
     mix: cur.mix,
     topCarriers: carriersFor(uploads, curKeys),
+    patterns: mergePatterns(slicesFor(uploads, curKeys)),
   };
   let previous: InsightPeriod | null = null;
   if (i > 0) {
@@ -244,12 +343,15 @@ export function liveInsights(uploads: UploadResult[], grain: PeriodGrain, index:
       tickets: prev.volumes.tickets_received,
       mix: prev.mix,
       topCarriers: carriersFor(uploads, prevKeys),
+      patterns: mergePatterns(slicesFor(uploads, prevKeys)),
     };
   }
   const p = previous?.mix;
   return {
+    window: `${windowLabels[0] ?? current.label} through ${current.label} (${months.length} months)`,
     current,
     previous,
+    months,
     deltas: {
       tickets: current.tickets - (previous?.tickets ?? 0),
       maintenance: current.mix.maintenance - (p?.maintenance ?? 0),
