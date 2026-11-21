@@ -365,8 +365,6 @@ export function parseWorkbook(kind: UploadKind, filename: string, buffer: ArrayB
   });
 
   const totals = finish(kind, total);
-  void MONTH_LABELS;
-  void QUARTER_LABELS;
 
   return {
     kind,
