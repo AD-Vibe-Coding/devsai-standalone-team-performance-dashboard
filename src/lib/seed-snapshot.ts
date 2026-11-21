@@ -249,12 +249,6 @@ export type TrendPoint = {
 };
 
 export const MONTH_LABELS = [
-  "Apr 25",
-  "May 25",
-  "Jun 25",
-  "Jul 25",
-  "Aug 25",
-  "Sep 25",
   "Oct 25",
   "Nov 25",
   "Dec 25",
@@ -262,9 +256,15 @@ export const MONTH_LABELS = [
   "Feb 26",
   "Mar 26",
   "Apr 26",
+  "May 26",
+  "Jun 26",
+  "Jul 26",
+  "Aug 26",
+  "Sep 26",
+  "Oct 26",
 ];
 
-export const QUARTER_LABELS = ["Q2 25", "Q3 25", "Q4 25", "Q1 26", "Q2 26"];
+export const QUARTER_LABELS = ["Q4 25", "Q1 26", "Q2 26", "Q3 26", "Q4 26"];
 
 const CURRENT_VOLUMES = overviewFrom(SNAPSHOT, VOLUMES).volumes;
 const CURRENT_KPIS = overviewFrom(SNAPSHOT, VOLUMES).kpis;
